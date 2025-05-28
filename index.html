@@ -1,73 +1,1017 @@
-# El entorno fue reiniciado, así que debo volver a crear el archivo index.html con Firebase
-firebase_html_path = "/mnt/data/index.html"
-
-firebase_html_content = """
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de Boletas con Firebase</title>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Venta de Boletería - Rifas</title>
     <style>
-        body { font-family: sans-serif; padding: 2em; background: #f0f0f0; }
-        h1 { color: #333; }
-        button { padding: 10px 20px; margin-top: 1em; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .admin-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #007bff;
+        }
+
+        .admin-section h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-card h3 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+            gap: 5px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        .ticket {
+            width: 60px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ticket.available {
+            background: #28a745;
+            color: white;
+        }
+
+        .ticket.sold {
+            background: #dc3545;
+            color: white;
+        }
+
+        .ticket.selected {
+            background: #ffc107;
+            color: black;
+            transform: scale(1.1);
+        }
+
+        .sale-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .selected-tickets {
+            background: #e9ecef;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .selected-tickets h4 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .ticket-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-bottom: 15px;
+        }
+
+        .ticket-item {
+            background: white;
+            padding: 10px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .remove-ticket {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .connection-status.connected {
+            background: #28a745;
+        }
+
+        .connection-status.disconnected {
+            background: #dc3545;
+        }
+
+        .cancellation-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .cancellation-section h4 {
+            color: #856404;
+            margin-bottom: 15px;
+        }
+
+        .cancel-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .cancel-input-group input {
+            flex: 1;
+        }
+
+        @media (max-width: 768px) {
+            .sale-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .ticket-grid {
+                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            }
+            
+            .ticket {
+                width: 50px;
+                height: 35px;
+                font-size: 11px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>🎫 Sistema de Venta de Boletas - Conectado a Firebase</h1>
+    <div class="connection-status" id="connectionStatus">
+        🟢 Conectado
+    </div>
 
-    <p>Este sistema guarda las boletas y ventas en Firebase Realtime Database.</p>
+    <div class="container">
+        <div class="header">
+            <h1>🎫 Sistema de Venta de Boletería</h1>
+            <p>Gestión de Rifas en Tiempo Real</p>
+        </div>
 
-    <button onclick="crearBoleta()">Crear boleta de prueba</button>
-    <button onclick="leerBoletas()">Leer boletas</button>
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('admin')">👨‍💼 Administrador</button>
+            <button class="tab" onclick="showTab('seller')">🛒 Vendedor</button>
+            <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
+        </div>
 
-    <pre id="output" style="background:#fff; padding: 1em; border:1px solid #ccc;"></pre>
+        <!-- Pestaña Administrador -->
+        <div id="admin" class="tab-content active">
+            <div class="admin-section">
+                <h3>🔐 Panel de Administrador</h3>
+                <p><strong>Usuario:</strong> admin | <strong>Contraseña:</strong> admin123</p>
+                
+                <div class="form-group">
+                    <label>Usuario Administrador:</label>
+                    <input type="text" id="adminUser" placeholder="Ingrese usuario administrador">
+                </div>
+                
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="adminPass" placeholder="Ingrese contraseña">
+                </div>
+                
+                <button class="btn btn-primary" onclick="loginAdmin()">Iniciar Sesión como Administrador</button>
+            </div>
+
+            <div id="adminPanel" style="display: none;">
+                <h3>Gestión de Vendedores</h3>
+                
+                <div class="form-group">
+                    <label>Nombre del Vendedor:</label>
+                    <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor">
+                </div>
+                
+                <button class="btn btn-success" onclick="addSeller()">Agregar Vendedor</button>
+                <button class="btn btn-danger" onclick="resetSystem()">Reiniciar Sistema</button>
+                
+                <div id="sellersList" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <!-- Pestaña Vendedor -->
+        <div id="seller" class="tab-content">
+            <div class="form-group">
+                <label>Seleccionar Vendedor:</label>
+                <select id="currentSeller">
+                    <option value="">Seleccione un vendedor</option>
+                </select>
+            </div>
+
+            <div id="sellerPanel" style="display: none;">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="availableCount">1000</h3>
+                        <p>Boletas Disponibles</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="soldCount">0</h3>
+                        <p>Boletas Vendidas</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="selectedCount">0</h3>
+                        <p>Seleccionadas</p>
+                    </div>
+                </div>
+
+                <div class="sale-section">
+                    <div>
+                        <h4>Seleccionar Boletas (Click en las verdes)</h4>
+                        <div class="ticket-grid" id="ticketGrid"></div>
+                    </div>
+                    
+                    <div class="selected-tickets">
+                        <h4>Boletas Seleccionadas</h4>
+                        <div class="ticket-list" id="selectedTicketsList"></div>
+                        <button class="btn btn-success" onclick="confirmSale()">Confirmar Venta</button>
+                        <button class="btn btn-danger" onclick="clearSelection()">Limpiar Selección</button>
+                    </div>
+                </div>
+
+                <!-- Sección de Cancelación -->
+                <div class="cancellation-section">
+                    <h4>🚫 Cancelar Boleta Vendida</h4>
+                    <p><small>Ingrese el número de la boleta que desea cancelar (debe estar vendida)</small></p>
+                    <div class="cancel-input-group">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Número de Boleta a Cancelar:</label>
+                            <input type="number" id="cancelTicketNumber" placeholder="Ej: 150" min="1" max="1000">
+                        </div>
+                        <button class="btn btn-danger" onclick="cancelTicket()" id="cancelBtn">
+                            🗑️ Cancelar Boleta
+                        </button>
+                    </div>
+                    <div id="cancelStatus" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña Dashboard -->
+        <div id="dashboard" class="tab-content">
+            <h3>📊 Dashboard General</h3>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="dashAvailable">1000</h3>
+                    <p>Boletas Disponibles</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="dashSold">0</h3>
+                    <p>Total Vendidas</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="dashRevenue">$0</h3>
+                    <p>Ingresos (x$1000)</p>
+                </div>
+            </div>
+
+            <div id="salesBySeller"></div>
+            
+            <h4>Estado de Todas las Boletas</h4>
+            <div class="ticket-grid" id="dashboardTicketGrid"></div>
+        </div>
+    </div>
+
+    <div id="alerts"></div>
 
     <script>
-        // 🔗 1. Reemplaza estos valores con tu configuración de Firebase
-        const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_DOMINIO.firebaseapp.com",
-            databaseURL: "https://TU_DOMINIO.firebaseio.com",
-            projectId: "TU_PROJECT_ID",
-            storageBucket: "TU_BUCKET.appspot.com",
-            messagingSenderId: "TU_ID",
-            appId: "TU_APP_ID"
+        // Sistema de datos en memoria (simula base de datos)
+        let systemData = {
+            tickets: {},
+            sellers: [],
+            sales: [],
+            isInitialized: false
         };
 
-        // 🔌 2. Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
+        // Inicializar sistema
+        function initializeSystem() {
+            if (!systemData.isInitialized) {
+                for (let i = 1; i <= 1000; i++) {
+                    systemData.tickets[i] = {
+                        number: i,
+                        status: 'available', // available, sold
+                        soldBy: null,
+                        saleDate: null
+                    };
+                }
+                systemData.isInitialized = true;
+                updateAllDisplays();
+            }
+        }
 
-        // ✅ 3. Función de prueba: crear boleta
-        function crearBoleta() {
-            const boletaId = Math.floor(Math.random() * 1000) + 1;
-            db.ref('boletas/' + boletaId).set({
-                numero: boletaId,
-                estado: 'vendida',
-                vendedor: 'Vendedor demo',
-                fecha: new Date().toISOString()
-            }).then(() => {
-                alert("Boleta creada en Firebase: " + boletaId);
+        // Sistema de pestañas
+        function showTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'dashboard') {
+                updateDashboard();
+            }
+        }
+
+        // Login de administrador
+        function loginAdmin() {
+            const user = document.getElementById('adminUser').value;
+            const pass = document.getElementById('adminPass').value;
+            
+            if (user === 'admin' && pass === 'admin123') {
+                document.getElementById('adminPanel').style.display = 'block';
+                showAlert('¡Bienvenido Administrador!', 'success');
+                updateSellersList();
+            } else {
+                showAlert('Credenciales incorrectas', 'danger');
+            }
+        }
+
+        // Agregar vendedor
+        function addSeller() {
+            const name = document.getElementById('sellerName').value.trim();
+            if (!name) {
+                showAlert('Por favor ingrese un nombre', 'danger');
+                return;
+            }
+            
+            if (systemData.sellers.find(s => s.name === name)) {
+                showAlert('Este vendedor ya existe', 'danger');
+                return;
+            }
+            
+            systemData.sellers.push({
+                id: Date.now(),
+                name: name,
+                sales: 0,
+                revenue: 0
+            });
+            
+            document.getElementById('sellerName').value = '';
+            updateSellersList();
+            updateSellerDropdown();
+            showAlert(`Vendedor "${name}" agregado correctamente`, 'success');
+        }
+
+        // Actualizar lista de vendedores
+        function updateSellersList() {
+            const container = document.getElementById('sellersList');
+            if (systemData.sellers.length === 0) {
+                container.innerHTML = '<p>No hay vendedores registrados</p>';
+                return;
+            }
+            
+            let html = '<h4>Vendedores Registrados:</h4><ul>';
+            systemData.sellers.forEach(seller => {
+                html += `<li>${seller.name} - Ventas: ${seller.sales} - Ingresos: $${seller.revenue * 1000}</li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
+        }
+
+        // Actualizar dropdown de vendedores
+        function updateSellerDropdown() {
+            const select = document.getElementById('currentSeller');
+            select.innerHTML = '<option value="">Seleccione un vendedor</option>';
+            
+            systemData.sellers.forEach(seller => {
+                const option = document.createElement('option');
+                option.value = seller.id;
+                option.textContent = seller.name;
+                select.appendChild(option);
             });
         }
 
-        // 🔍 4. Leer boletas desde Firebase
-        function leerBoletas() {
-            db.ref('boletas').once('value').then(snapshot => {
-                const data = snapshot.val();
-                document.getElementById('output').textContent = JSON.stringify(data, null, 2);
+        // Cambiar vendedor actual
+        document.getElementById('currentSeller').addEventListener('change', function() {
+            const sellerId = this.value;
+            if (sellerId) {
+                document.getElementById('sellerPanel').style.display = 'block';
+                initializeSystem();
+                createTicketGrid();
+                updateStats();
+            } else {
+                document.getElementById('sellerPanel').style.display = 'none';
+            }
+        });
+
+        // Crear grid de boletas
+        function createTicketGrid() {
+            const grid = document.getElementById('ticketGrid');
+            if (!grid) return;
+            
+            grid.innerHTML = '';
+            
+            for (let i = 1; i <= 1000; i++) {
+                const ticket = document.createElement('div');
+                const ticketData = systemData.tickets[i];
+                
+                // Asegurar que la clase refleje correctamente el estado
+                ticket.className = `ticket ${ticketData.status}`;
+                ticket.textContent = i;
+                ticket.onclick = () => toggleTicketSelection(i);
+                
+                // Agregar tooltip con información
+                if (ticketData.status === 'sold') {
+                    ticket.title = `Vendida por: ${ticketData.soldBy || 'Desconocido'}`;
+                } else {
+                    ticket.title = 'Disponible para venta';
+                }
+                
+                grid.appendChild(ticket);
+            }
+            
+            // Forzar re-renderizado
+            grid.offsetHeight;
+        }
+
+        // Variables para boletas seleccionadas
+        let selectedTickets = new Set();
+
+        // Seleccionar/deseleccionar boleta
+        function toggleTicketSelection(ticketNumber) {
+            const ticket = systemData.tickets[ticketNumber];
+            
+            if (ticket.status === 'sold') {
+                showAlert(`La boleta ${ticketNumber} ya está vendida`, 'danger');
+                return;
+            }
+            
+            const ticketElement = document.querySelector(`.ticket:nth-child(${ticketNumber})`);
+            
+            if (selectedTickets.has(ticketNumber)) {
+                selectedTickets.delete(ticketNumber);
+                ticketElement.classList.remove('selected');
+            } else {
+                selectedTickets.add(ticketNumber);
+                ticketElement.classList.add('selected');
+            }
+            
+            updateSelectedTicketsList();
+            updateStats();
+        }
+
+        // Actualizar lista de boletas seleccionadas
+        function updateSelectedTicketsList() {
+            const container = document.getElementById('selectedTicketsList');
+            container.innerHTML = '';
+            
+            if (selectedTickets.size === 0) {
+                container.innerHTML = '<p>No hay boletas seleccionadas</p>';
+                return;
+            }
+            
+            Array.from(selectedTickets).sort((a, b) => a - b).forEach(ticketNumber => {
+                const div = document.createElement('div');
+                div.className = 'ticket-item';
+                div.innerHTML = `
+                    <span>Boleta ${ticketNumber}</span>
+                    <button class="remove-ticket" onclick="removeTicketFromSelection(${ticketNumber})">×</button>
+                `;
+                container.appendChild(div);
             });
         }
+
+        // Remover boleta de selección
+        function removeTicketFromSelection(ticketNumber) {
+            selectedTickets.delete(ticketNumber);
+            const ticketElement = document.querySelector(`.ticket:nth-child(${ticketNumber})`);
+            if (ticketElement) {
+                ticketElement.classList.remove('selected');
+            }
+            updateSelectedTicketsList();
+            updateStats();
+        }
+
+        // Confirmar venta
+        function confirmSale() {
+            if (selectedTickets.size === 0) {
+                showAlert('No hay boletas seleccionadas para vender', 'danger');
+                return;
+            }
+            
+            const sellerId = document.getElementById('currentSeller').value;
+            const seller = systemData.sellers.find(s => s.id == sellerId);
+            
+            if (!seller) {
+                showAlert('Por favor seleccione un vendedor', 'danger');
+                return;
+            }
+            
+            const ticketsArray = Array.from(selectedTickets);
+            const saleDate = new Date().toLocaleString();
+            
+            // Marcar boletas como vendidas
+            ticketsArray.forEach(ticketNumber => {
+                systemData.tickets[ticketNumber].status = 'sold';
+                systemData.tickets[ticketNumber].soldBy = seller.name;
+                systemData.tickets[ticketNumber].saleDate = saleDate;
+            });
+            
+            // Actualizar estadísticas del vendedor
+            seller.sales += ticketsArray.length;
+            seller.revenue += ticketsArray.length;
+            
+            // Registrar venta
+            systemData.sales.push({
+                seller: seller.name,
+                tickets: ticketsArray,
+                date: saleDate,
+                amount: ticketsArray.length
+            });
+            
+            showAlert(`¡Venta confirmada! ${ticketsArray.length} boletas vendidas por ${seller.name}`, 'success');
+            
+            // Limpiar selección y actualizar
+            clearSelection();
+            createTicketGrid();
+            updateStats();
+            updateSellersList();
+        }
+
+        // Limpiar selección
+        function clearSelection() {
+            selectedTickets.clear();
+            document.querySelectorAll('.ticket.selected').forEach(ticket => {
+                ticket.classList.remove('selected');
+            });
+            updateSelectedTicketsList();
+            updateStats();
+        }
+
+        // Cancelar boleta
+        function cancelTicket() {
+            const ticketNumberInput = document.getElementById('cancelTicketNumber');
+            const ticketNumber = parseInt(ticketNumberInput.value);
+
+            if (!ticketNumber || ticketNumber < 1 || ticketNumber > 1000) {
+                showAlert('Por favor ingrese un número de boleta válido (1-1000)', 'danger');
+                return;
+            }
+
+            if (!systemData.isInitialized) {
+                showAlert('El sistema no está inicializado. Por favor, seleccione un vendedor primero.', 'danger');
+                return;
+            }
+
+            const ticket = systemData.tickets[ticketNumber];
+
+            if (!ticket) {
+                // Esto no debería ocurrir si el sistema está inicializado y el número es válido,
+                // pero es una buena guarda.
+                showAlert(`La boleta ${ticketNumber} no existe en el sistema`, 'danger');
+                return;
+            }
+
+            if (ticket.status === 'available') {
+                showAlert(`La boleta ${ticketNumber} ya está disponible, no se puede cancelar`, 'info');
+                ticketNumberInput.value = ''; // Limpiar input
+                return;
+            }
+
+            // Confirmar cancelación
+            if (confirm(`¿Está seguro de cancelar la boleta ${ticketNumber}?\nVendida por: ${ticket.soldBy || 'Desconocido'}`)) {
+                const soldBy = ticket.soldBy;
+
+                // Marcar como disponible
+                ticket.status = 'available';
+                ticket.soldBy = null;
+                ticket.saleDate = null;
+
+                // Actualizar estadísticas del vendedor
+                const seller = systemData.sellers.find(s => s.name === soldBy);
+                if (seller) {
+                    seller.sales = Math.max(0, seller.sales - 1);
+                    // Asumimos que el precio de la boleta es 1 para el cálculo de 'revenue' aquí.
+                    // Si el precio es diferente (ej. 1000 como en el dashboard), ajustar aquí.
+                    // Por consistencia con el dashboard que muestra ingresos x1000,
+                    // el revenue del vendedor también debería ser por el precio real.
+                    // Si cada boleta es 1000, entonces revenue -= 1 (si revenue es cantidad) o revenue -= 1000 si es el monto.
+                    // El código actual de addSeller y confirmSale sugiere que seller.revenue es la cantidad de boletas.
+                    seller.revenue = Math.max(0, seller.revenue - 1);
+                }
+
+                // Corregir la actualización de systemData.sales
+                let saleModified = false;
+                for (let i = systemData.sales.length - 1; i >= 0; i--) {
+                    const saleRecord = systemData.sales[i];
+                    const ticketIndexInSale = saleRecord.tickets.indexOf(ticketNumber);
+
+                    if (ticketIndexInSale > -1) {
+                        saleRecord.tickets.splice(ticketIndexInSale, 1); // Remover la boleta específica de la venta
+                        saleRecord.amount = saleRecord.tickets.length;   // Actualizar la cantidad de boletas en esa venta
+
+                        if (saleRecord.tickets.length === 0) {
+                            // Si la venta ya no tiene boletas, eliminar el registro de venta
+                            systemData.sales.splice(i, 1);
+                        }
+                        saleModified = true;
+                        break; // Asumimos que una boleta solo puede estar en un registro de venta
+                    }
+                }
+
+                // Actualizar displays - ORDEN IMPORTANTE
+                // Primero actualizar el grid para reflejar el cambio visual
+                if (document.getElementById('ticketGrid')) {
+                    createTicketGrid(); // Actualiza la cuadrícula de boletas en la pestaña del vendedor
+                }
+                
+                // Luego actualizar estadísticas
+                updateStats();      // Actualiza las estadísticas en la pestaña del vendedor
+                updateSellersList(); // Actualiza la lista de vendedores en la pestaña de administrador
+
+                // Actualizar dashboard si está visible
+                const dashboardTab = document.getElementById('dashboard');
+                if (dashboardTab && dashboardTab.classList.contains('active')) {
+                    updateDashboard(); // Actualiza la cuadrícula y estadísticas del dashboard
+                }
+
+                // Forzar actualización visual
+                setTimeout(() => {
+                    if (document.getElementById('ticketGrid')) {
+                        createTicketGrid();
+                    }
+                }, 100);
+
+                ticketNumberInput.value = ''; // Limpiar el campo de entrada
+                document.getElementById('cancelStatus').innerHTML = `<div class="alert alert-success">✅ Boleta ${ticketNumber} cancelada correctamente.</div>`;
+                showAlert(`✅ Boleta ${ticketNumber} cancelada correctamente`, 'success');
+
+                // Limpiar el mensaje de estado de cancelación después de un tiempo
+                setTimeout(() => {
+                    const cancelStatusDiv = document.getElementById('cancelStatus');
+                    if (cancelStatusDiv) {
+                        cancelStatusDiv.innerHTML = '';
+                    }
+                }, 4000);
+
+            }
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            const available = Object.values(systemData.tickets).filter(t => t.status === 'available').length;
+            const sold = 1000 - available;
+            const selected = selectedTickets.size;
+            
+            document.getElementById('availableCount').textContent = available;
+            document.getElementById('soldCount').textContent = sold;
+            document.getElementById('selectedCount').textContent = selected;
+        }
+
+        // Actualizar dashboard
+        function updateDashboard() {
+            const available = Object.values(systemData.tickets).filter(t => t.status === 'available').length;
+            const sold = 1000 - available;
+            const revenue = sold;
+            
+            document.getElementById('dashAvailable').textContent = available;
+            document.getElementById('dashSold').textContent = sold;
+            document.getElementById('dashRevenue').textContent = `${revenue * 1000}`;
+            
+            // Crear grid de dashboard - MEJORADO
+            const dashGrid = document.getElementById('dashboardTicketGrid');
+            if (dashGrid) {
+                dashGrid.innerHTML = '';
+                
+                for (let i = 1; i <= 1000; i++) {
+                    const ticket = document.createElement('div');
+                    const ticketData = systemData.tickets[i];
+                    
+                    // Asegurar que la clase refleje correctamente el estado
+                    ticket.className = `ticket ${ticketData.status}`;
+                    ticket.textContent = i;
+                    ticket.title = ticketData.status === 'sold' ? 
+                        `Vendida por: ${ticketData.soldBy}` : 'Disponible';
+                    dashGrid.appendChild(ticket);
+                }
+                
+                // Forzar re-renderizado
+                dashGrid.offsetHeight;
+            }
+            
+            // Estadísticas por vendedor
+            updateSalesBySeller();
+        }
+
+        // Actualizar ventas por vendedor
+        function updateSalesBySeller() {
+            const container = document.getElementById('salesBySeller');
+            let html = '<h4>Ventas por Vendedor:</h4>';
+            
+            if (systemData.sellers.length === 0) {
+                html += '<p>No hay vendedores registrados</p>';
+            } else {
+                html += '<div class="stats-grid">';
+                systemData.sellers.forEach(seller => {
+                    html += `
+                        <div class="stat-card">
+                            <h3>${seller.sales}</h3>
+                            <p>${seller.name}</p>
+                            <small>$${seller.revenue * 1000} ingresos</small>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        // Reiniciar sistema
+        function resetSystem() {
+            if (confirm('¿Está seguro de reiniciar todo el sistema? Esta acción no se puede deshacer.')) {
+                systemData = {
+                    tickets: {},
+                    sellers: [],
+                    sales: [],
+                    isInitialized: false
+                };
+                selectedTickets.clear();
+                
+                document.getElementById('sellerPanel').style.display = 'none';
+                document.getElementById('currentSeller').innerHTML = '<option value="">Seleccione un vendedor</option>';
+                
+                showAlert('Sistema reiniciado correctamente', 'success');
+                updateSellersList();
+            }
+        }
+
+        // Sistema de alertas
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alerts');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertsContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
+        // Actualizar todos los displays
+        function updateAllDisplays() {
+            updateStats();
+            updateSellerDropdown();
+            updateSellersList();
+        }
+
+        // Simular sincronización en tiempo real
+        function simulateRealTimeSync() {
+            // Aquí normalmente se conectaría a WebSocket o polling
+            setInterval(() => {
+                // Simular actualización
+                const status = document.getElementById('connectionStatus');
+                status.className = 'connection-status connected';
+                status.textContent = '🟢 Sincronizado';
+            }, 2000);
+        }
+
+        // Inicializar aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            simulateRealTimeSync();
+            updateAllDisplays();
+            
+            // Agregar evento para verificar boleta en tiempo real
+            document.getElementById('cancelTicketNumber').addEventListener('input', function() {
+                const ticketNumber = parseInt(this.value);
+                const statusDiv = document.getElementById('cancelStatus');
+                
+                if (!ticketNumber || ticketNumber < 1 || ticketNumber > 1000) {
+                    statusDiv.innerHTML = '';
+                    return;
+                }
+                
+                if (!systemData.isInitialized) {
+                    statusDiv.innerHTML = '<div class="alert alert-info">Sistema no inicializado</div>';
+                    return;
+                }
+                
+                const ticket = systemData.tickets[ticketNumber];
+                if (!ticket) {
+                    statusDiv.innerHTML = '<div class="alert alert-danger">Boleta no encontrada</div>';
+                    return;
+                }
+                
+                if (ticket.status === 'available') {
+                    statusDiv.innerHTML = '<div class="alert alert-info">✅ Boleta disponible - No se puede cancelar</div>';
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-success">🎫 Boleta VENDIDA por: <strong>${ticket.soldBy}</strong><br>📅 Fecha: ${ticket.saleDate}</div>`;
+                }
+            });
+        });
     </script>
 </body>
 </html>
-"""
-
-# Escribir el archivo HTML
-with open(firebase_html_path, "w", encoding="utf-8") as f:
-    f.write(firebase_html_content)
-
-firebase_html_path
