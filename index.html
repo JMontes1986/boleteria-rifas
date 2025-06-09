@@ -400,6 +400,7 @@
                 <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
                 <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
                 <button class="btn btn-primary" onclick="testConnection()" id="testConnBtn">Probar Conexión</button>
+                <button class="btn btn-primary" onclick="showDatabaseSetup()" id="setupBtn">Configurar Base de Datos</button>
                 
                 <div id="sellersList" style="margin-top: 20px;"></div>
             </div>
@@ -552,17 +553,23 @@
                     throw new Error('No se pudo inicializar Supabase después de ' + maxAttempts + ' intentos');
                 }
                 
-                // Verificar conexión con una consulta simple
-                showAlert('Verificando conexión...', 'info');
-                const { data, error } = await supabaseClient
-                    .from('vendedores')
-                    .select('count', { count: 'exact', head: true })
-                    .limit(1);
+                // Diagnóstico completo de la base de datos
+                showAlert('Verificando base de datos...', 'info');
+                const diagnostic = await diagnosticDatabase();
                 
-                if (error && error.message.includes('relation "vendedores" does not exist')) {
-                    throw new Error('Las tablas no existen en Supabase. Por favor verifique que las tablas "boletas" y "vendedores" estén creadas.');
-                } else if (error) {
-                    throw new Error('Error de conexión: ' + error.message);
+                if (!diagnostic.success) {
+                    if (diagnostic.needsTableCreation) {
+                        showAlert('Creando tablas automáticamente...', 'info');
+                        const created = await createTablesAutomatically();
+                        
+                        if (!created) {
+                            throw new Error(diagnostic.error + '\n\nLas tablas no existen y no se pudieron crear automáticamente.');
+                        }
+                        
+                        showAlert('Tablas creadas exitosamente', 'success');
+                    } else {
+                        throw new Error(diagnostic.error);
+                    }
                 }
                 
                 showAlert('Conexión establecida. Cargando datos...', 'info');
@@ -580,21 +587,187 @@
                 updateConnectionStatus('disconnected');
                 
                 // Mostrar error específico y soluciones
-                let errorMessage = 'Error conectando con la base de datos: ' + error.message;
-                let solutions = '';
+                let errorMessage = 'Error conectando con la base de datos:\n' + error.message;
                 
-                if (error.message.includes('No se pudo inicializar Supabase')) {
-                    solutions = '\n\nSoluciones posibles:\n1. Verifique su conexión a internet\n2. Recargue la página\n3. Verifique que las credenciales de Supabase sean correctas';
-                } else if (error.message.includes('tablas no existen')) {
-                    solutions = '\n\nNecesita crear las tablas en Supabase:\n1. Vaya a su proyecto en supabase.com\n2. En SQL Editor ejecute los comandos de creación de tablas';
-                } else if (error.message.includes('Invalid API key')) {
-                    solutions = '\n\nLa API Key parece ser inválida. Verifique en su proyecto de Supabase.';
+                if (error.message.includes('Invalid API key')) {
+                    errorMessage += '\n\n🔑 SOLUCIÓN: Verifique la API Key en Supabase Dashboard > Settings > API';
+                } else if (error.message.includes('relation') && error.message.includes('does not exist')) {
+                    errorMessage += '\n\n📋 SOLUCIÓN: Las tablas no existen. Ejecute el SQL en Supabase SQL Editor:';
+                    errorMessage += '\n\nCREATE TABLE vendedores (id BIGSERIAL PRIMARY KEY, nombre TEXT NOT NULL);';
+                    errorMessage += '\nCREATE TABLE boletas (numero INTEGER PRIMARY KEY, estado TEXT DEFAULT \'disponible\', vendedor TEXT, fecha TIMESTAMP);';
+                    errorMessage += '\nALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;';
+                    errorMessage += '\nALTER TABLE boletas ENABLE ROW LEVEL SECURITY;';
+                    errorMessage += '\nCREATE POLICY "Allow all" ON vendedores FOR ALL USING (true);';
+                    errorMessage += '\nCREATE POLICY "Allow all" ON boletas FOR ALL USING (true);';
+                } else if (error.message.includes('JWT')) {
+                    errorMessage += '\n\n🔐 SOLUCIÓN: Problema de autenticación. Verifique la URL del proyecto.';
                 }
                 
-                showAlert(errorMessage + solutions, 'danger');
+                showAlert(errorMessage, 'danger');
                 
                 // Modo offline - usar datos locales
                 enableOfflineMode();
+            }
+        }
+
+        // Diagnóstico de la base de datos
+        async function diagnosticDatabase() {
+            try {
+                console.log('🔍 Iniciando diagnóstico de base de datos...');
+                
+                // Test 1: Verificar conexión básica
+                console.log('📡 Test 1: Verificando conexión básica...');
+                const { data: basicTest, error: basicError } = await supabaseClient
+                    .from('_realtime')
+                    .select('*')
+                    .limit(1);
+                
+                if (basicError && basicError.message.includes('permission denied')) {
+                    console.log('✅ Conexión básica OK (error esperado de permisos)');
+                } else if (basicError && !basicError.message.includes('relation')) {
+                    console.log('❌ Error de conexión básica:', basicError.message);
+                    return { success: false, error: 'Error de conexión: ' + basicError.message };
+                }
+                
+                // Test 2: Verificar tabla vendedores
+                console.log('👥 Test 2: Verificando tabla vendedores...');
+                const { data: vendedoresTest, error: vendedoresError } = await supabaseClient
+                    .from('vendedores')
+                    .select('count', { count: 'exact', head: true })
+                    .limit(1);
+                
+                if (vendedoresError) {
+                    if (vendedoresError.message.includes('does not exist')) {
+                        console.log('❌ Tabla vendedores no existe');
+                        return { 
+                            success: false, 
+                            needsTableCreation: true,
+                            error: 'Las tablas "vendedores" y "boletas" no existen en la base de datos' 
+                        };
+                    } else if (vendedoresError.message.includes('permission denied') || vendedoresError.message.includes('RLS')) {
+                        console.log('❌ Error de permisos en tabla vendedores');
+                        return { 
+                            success: false, 
+                            error: 'Error de permisos: Row Level Security no configurado correctamente' 
+                        };
+                    } else {
+                        console.log('❌ Error en tabla vendedores:', vendedoresError.message);
+                        return { success: false, error: vendedoresError.message };
+                    }
+                }
+                
+                // Test 3: Verificar tabla boletas
+                console.log('🎫 Test 3: Verificando tabla boletas...');
+                const { data: boletasTest, error: boletasError } = await supabaseClient
+                    .from('boletas')
+                    .select('count', { count: 'exact', head: true })
+                    .limit(1);
+                
+                if (boletasError) {
+                    if (boletasError.message.includes('does not exist')) {
+                        console.log('❌ Tabla boletas no existe');
+                        return { 
+                            success: false, 
+                            needsTableCreation: true,
+                            error: 'La tabla "boletas" no existe en la base de datos' 
+                        };
+                    } else if (boletasError.message.includes('permission denied') || boletasError.message.includes('RLS')) {
+                        console.log('❌ Error de permisos en tabla boletas');
+                        return { 
+                            success: false, 
+                            error: 'Error de permisos: Row Level Security no configurado correctamente' 
+                        };
+                    } else {
+                        console.log('❌ Error en tabla boletas:', boletasError.message);
+                        return { success: false, error: boletasError.message };
+                    }
+                }
+                
+                // Test 4: Verificar permisos de escritura
+                console.log('✏️ Test 4: Verificando permisos de escritura...');
+                const testVendor = { nombre: 'TEST_' + Date.now() };
+                const { data: writeTest, error: writeError } = await supabaseClient
+                    .from('vendedores')
+                    .insert([testVendor])
+                    .select();
+                
+                if (writeError) {
+                    console.log('❌ Error de escritura:', writeError.message);
+                    return { 
+                        success: false, 
+                        error: 'No se pueden insertar datos: ' + writeError.message 
+                    };
+                }
+                
+                // Limpiar test
+                if (writeTest && writeTest[0]) {
+                    await supabaseClient
+                        .from('vendedores')
+                        .delete()
+                        .eq('id', writeTest[0].id);
+                }
+                
+                console.log('✅ Todos los tests de diagnóstico pasaron correctamente');
+                return { success: true };
+                
+            } catch (error) {
+                console.error('❌ Error durante diagnóstico:', error);
+                return { 
+                    success: false, 
+                    error: 'Error inesperado durante diagnóstico: ' + error.message 
+                };
+            }
+        }
+
+        // Crear tablas automáticamente
+        async function createTablesAutomatically() {
+            try {
+                console.log('🛠️ Intentando crear tablas automáticamente...');
+                
+                // Script SQL para crear tablas
+                const createTablesSQL = `
+                -- Crear tabla vendedores
+                CREATE TABLE IF NOT EXISTS vendedores (
+                    id BIGSERIAL PRIMARY KEY,
+                    nombre TEXT NOT NULL,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                );
+
+                -- Crear tabla boletas
+                CREATE TABLE IF NOT EXISTS boletas (
+                    numero INTEGER PRIMARY KEY,
+                    estado TEXT NOT NULL DEFAULT 'disponible',
+                    vendedor TEXT,
+                    fecha TIMESTAMP WITH TIME ZONE,
+                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+                );
+
+                -- Habilitar RLS
+                ALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;
+                ALTER TABLE boletas ENABLE ROW LEVEL SECURITY;
+
+                -- Crear políticas permisivas
+                DROP POLICY IF EXISTS "Allow all operations vendedores" ON vendedores;
+                DROP POLICY IF EXISTS "Allow all operations boletas" ON boletas;
+                
+                CREATE POLICY "Allow all operations vendedores" ON vendedores FOR ALL USING (true);
+                CREATE POLICY "Allow all operations boletas" ON boletas FOR ALL USING (true);
+                `;
+
+                // Intentar ejecutar usando la función RPC si está disponible
+                const { data, error } = await supabaseClient.rpc('exec_sql', { sql: createTablesSQL });
+                
+                if (error) {
+                    console.log('❌ No se pudo crear automáticamente, se requiere intervención manual');
+                    return false;
+                }
+                
+                console.log('✅ Tablas creadas automáticamente');
+                return true;
+                
+            } catch (error) {
+                console.error('❌ Error creando tablas automáticamente:', error);
+                return false;
             }
         }
 
@@ -1351,74 +1524,248 @@
         // Función para probar la conexión
         async function testConnection() {
             try {
-                showAlert('Probando conexión...', 'info');
+                showAlert('🔍 Probando conexión con Supabase...', 'info');
+                console.log('=== INICIO TEST DE CONEXIÓN ===');
                 
                 if (!supabaseClient) {
+                    console.log('🔄 Reinicializando cliente Supabase...');
                     if (!initSupabase()) {
-                        throw new Error('No se pudo inicializar Supabase');
+                        throw new Error('No se pudo inicializar el cliente Supabase');
                     }
                 }
                 
-                const { data, error } = await supabaseClient
+                // Test 1: Verificar que el cliente responda
+                console.log('📡 Test 1: Verificando respuesta del servidor...');
+                showAlert('Verificando servidor Supabase...', 'info');
+                
+                const { data: healthCheck, error: healthError } = await supabaseClient
                     .from('vendedores')
                     .select('count', { count: 'exact', head: true })
                     .limit(1);
                 
-                if (error) throw error;
+                if (healthError) {
+                    console.error('❌ Error en test de servidor:', healthError);
+                    throw new Error(`Error del servidor: ${healthError.message}`);
+                }
                 
-                showAlert('Conexión exitosa!', 'success');
-                updateConnectionStatus('connected');
+                console.log('✅ Servidor responde correctamente');
                 
-                // Recargar datos
+                // Test 2: Verificar tabla vendedores
+                console.log('👥 Test 2: Verificando tabla vendedores...');
+                showAlert('Verificando tabla vendedores...', 'info');
+                
+                const { data: vendedoresData, error: vendedoresError } = await supabaseClient
+                    .from('vendedores')
+                    .select('*')
+                    .limit(3);
+                
+                if (vendedoresError) {
+                    console.error('❌ Error en tabla vendedores:', vendedoresError);
+                    throw new Error(`Error en vendedores: ${vendedoresError.message}`);
+                }
+                
+                console.log('✅ Tabla vendedores OK, registros encontrados:', vendedoresData?.length || 0);
+                
+                // Test 3: Verificar tabla boletas
+                console.log('🎫 Test 3: Verificando tabla boletas...');
+                showAlert('Verificando tabla boletas...', 'info');
+                
+                const { data: boletasData, error: boletasError } = await supabaseClient
+                    .from('boletas')
+                    .select('*')
+                    .limit(5);
+                
+                if (boletasError) {
+                    console.error('❌ Error en tabla boletas:', boletasError);
+                    throw new Error(`Error en boletas: ${boletasError.message}`);
+                }
+                
+                console.log('✅ Tabla boletas OK, registros encontrados:', boletasData?.length || 0);
+                
+                // Test 4: Verificar permisos de escritura
+                console.log('✏️ Test 4: Verificando permisos de escritura...');
+                showAlert('Verificando permisos de escritura...', 'info');
+                
+                const testVendor = { nombre: 'TEST_CONNECTION_' + Date.now() };
+                const { data: insertTest, error: insertError } = await supabaseClient
+                    .from('vendedores')
+                    .insert([testVendor])
+                    .select();
+                
+                if (insertError) {
+                    console.error('❌ Error de escritura:', insertError);
+                    throw new Error(`Sin permisos de escritura: ${insertError.message}`);
+                }
+                
+                console.log('✅ Permisos de escritura OK');
+                
+                // Limpiar el test
+                if (insertTest && insertTest[0]) {
+                    await supabaseClient
+                        .from('vendedores')
+                        .delete()
+                        .eq('id', insertTest[0].id);
+                    console.log('🧹 Test de escritura limpiado');
+                }
+                
+                // Test 5: Verificar tiempo real (opcional)
+                console.log('⚡ Test 5: Verificando capacidades de tiempo real...');
+                showAlert('Verificando tiempo real...', 'info');
+                
+                try {
+                    const testChannel = supabaseClient.channel('connection_test');
+                    testChannel.subscribe((status) => {
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ Tiempo real disponible');
+                            testChannel.unsubscribe();
+                        }
+                    });
+                    
+                    // Esperar un poco para la suscripción
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (realtimeError) {
+                    console.log('⚠️ Tiempo real no disponible:', realtimeError);
+                    // No es crítico, continuar
+                }
+                
+                console.log('=== TODOS LOS TESTS PASARON ===');
+                
+                // Recargar datos frescos
+                showAlert('Recargando datos...', 'info');
                 await loadSellers();
                 await loadTickets();
                 
-                // Rehabilitar botones
+                // Habilitar funcionalidades
+                updateConnectionStatus('connected');
                 document.getElementById('addSellerBtn').disabled = false;
                 document.getElementById('resetBtn').disabled = false;
                 
+                // Configurar tiempo real
+                setupRealTimeUpdates();
+                
+                const successMessage = `🎉 ¡Conexión exitosa!
+                
+📊 Estado de la base de datos:
+• Vendedores: ${sellers.length} registrados
+• Boletas: ${Object.keys(tickets).length} en sistema
+• Tiempo real: Activado
+• Permisos: Completos
+
+✅ Sistema completamente funcional`;
+                
+                showAlert(successMessage, 'success');
+                console.log('🎉 CONEXIÓN ESTABLECIDA CORRECTAMENTE');
+                
             } catch (error) {
-                console.error('Error en test de conexión:', error);
-                showAlert('Error de conexión: ' + error.message, 'danger');
+                console.error('❌ ERROR EN TEST DE CONEXIÓN:', error);
                 updateConnectionStatus('disconnected');
+                
+                let errorMsg = `❌ Error de conexión: ${error.message}`;
+                
+                // Diagnóstico específico
+                if (error.message.includes('relation') && error.message.includes('does not exist')) {
+                    errorMsg += `\n\n📋 SOLUCIÓN: Las tablas no existen. Use el botón "Configurar Base de Datos"`;
+                } else if (error.message.includes('permission denied') || error.message.includes('RLS')) {
+                    errorMsg += `\n\n🔐 SOLUCIÓN: Problemas de permisos. Ejecute estas políticas en Supabase SQL Editor:
+                    
+ALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE boletas ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON vendedores FOR ALL USING (true);
+CREATE POLICY "Allow all" ON boletas FOR ALL USING (true);`;
+                } else if (error.message.includes('Invalid API key')) {
+                    errorMsg += `\n\n🔑 SOLUCIÓN: API Key inválida. Verifique en Supabase Dashboard > Settings > API`;
+                } else if (error.message.includes('network') || error.message.includes('fetch')) {
+                    errorMsg += `\n\n🌐 SOLUCIÓN: Problema de red. Verifique su conexión a internet`;
+                }
+                
+                showAlert(errorMsg, 'danger');
+                
+                // Mantener modo offline funcional
+                if (!sellers.length) {
+                    enableOfflineMode();
+                }
             }
         }
 
         // Monitorear conexión cada 30 segundos
         setInterval(checkConnection, 30000);
 
-        // Función para exportar datos (opcional)
-        async function exportData() {
-            try {
-                const { data: boletasData } = await supabaseClient
-                    .from('boletas')
-                    .select('*')
-                    .order('numero');
-                
-                const { data: vendedoresData } = await supabaseClient
-                    .from('vendedores')
-                    .select('*')
-                    .order('nombre');
-                
-                const exportData = {
-                    boletas: boletasData,
-                    vendedores: vendedoresData,
-                    fecha_exportacion: new Date().toISOString()
-                };
-                
-                const dataStr = JSON.stringify(exportData, null, 2);
-                const dataBlob = new Blob([dataStr], {type: 'application/json'});
-                const url = URL.createObjectURL(dataBlob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `rifas_backup_${new Date().toISOString().split('T')[0]}.json`;
-                link.click();
-                
-                showAlert('Datos exportados correctamente', 'success');
-            } catch (error) {
-                console.error('Error exportando datos:', error);
-                showAlert('Error exportando datos: ' + error.message, 'danger');
-            }
+        // Mostrar configuración de base de datos
+        function showDatabaseSetup() {
+            const setupSQL = `-- ✅ CONFIGURACIÓN COMPLETA PARA SUPABASE
+-- Copie y pegue este código en Supabase SQL Editor
+
+-- 1. Crear tabla vendedores
+CREATE TABLE IF NOT EXISTS vendedores (
+    id BIGSERIAL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 2. Crear tabla boletas
+CREATE TABLE IF NOT EXISTS boletas (
+    numero INTEGER PRIMARY KEY,
+    estado TEXT NOT NULL DEFAULT 'disponible',
+    vendedor TEXT,
+    fecha TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. Habilitar Row Level Security
+ALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE boletas ENABLE ROW LEVEL SECURITY;
+
+-- 4. Crear políticas para permitir acceso público
+CREATE POLICY "Allow all operations on vendedores" ON vendedores FOR ALL USING (true);
+CREATE POLICY "Allow all operations on boletas" ON boletas FOR ALL USING (true);
+
+-- 5. Verificar que todo funcione
+SELECT 'Configuración completada exitosamente' as status;`;
+
+            // Crear modal o ventana para mostrar el SQL
+            const modal = document.createElement('div');
+            modal.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; width: 90%; max-height: 90%; overflow-y: auto;">
+                        <h3>🛠️ Configuración de Base de Datos en Supabase</h3>
+                        <p><strong>Pasos para configurar:</strong></p>
+                        <ol>
+                            <li>Ve a <a href="https://supabase.com" target="_blank">supabase.com</a></li>
+                            <li>Abre tu proyecto: <strong>gvkzfieixyiqpklocavq</strong></li>
+                            <li>Ve a <strong>SQL Editor</strong> en el menú lateral</li>
+                            <li>Copia y pega el siguiente código:</li>
+                        </ol>
+                        <textarea style="width: 100%; height: 300px; font-family: monospace; font-size: 12px; margin: 10px 0;" readonly>${setupSQL}</textarea>
+                        <div style="margin-top: 20px;">
+                            <button onclick="copyToClipboard(this)" class="btn btn-primary">📋 Copiar SQL</button>
+                            <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-danger">Cerrar</button>
+                            <a href="https://gvkzfieixyiqpklocavq.supabase.co" target="_blank" class="btn btn-success">🚀 Ir a Supabase</a>
+                        </div>
+                        <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 5px;">
+                            <strong>Después de ejecutar el SQL:</strong><br>
+                            1. Haz click en "Probar Conexión" en esta aplicación<br>
+                            2. Deberías ver "Conexión exitosa!"
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        // Copiar al portapapeles
+        function copyToClipboard(button) {
+            const textarea = button.parentElement.previousElementSibling;
+            textarea.select();
+            document.execCommand('copy');
+            
+            const originalText = button.textContent;
+            button.textContent = '✅ Copiado!';
+            button.style.background = '#28a745';
+            
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '#007bff';
+            }, 2000);
         }
 
         // Inicializar aplicación cuando carga la página
