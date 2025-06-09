@@ -399,6 +399,7 @@
                 
                 <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
                 <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
+                <button class="btn btn-primary" onclick="testConnection()" id="testConnBtn">Probar Conexión</button>
                 
                 <div id="sellersList" style="margin-top: 20px;"></div>
             </div>
@@ -615,6 +616,11 @@
         // Cargar vendedores desde Supabase
         async function loadSellers() {
             try {
+                if (!supabaseClient) {
+                    console.log('Supabase no disponible, usando datos locales');
+                    return;
+                }
+                
                 const { data, error } = await supabaseClient
                     .from('vendedores')
                     .select('*')
@@ -627,13 +633,19 @@
                 updateSellersList();
             } catch (error) {
                 console.error('Error cargando vendedores:', error);
-                throw error;
+                showAlert('Error cargando vendedores: ' + error.message, 'danger');
+                // No lanzar error para permitir modo offline
             }
         }
 
         // Cargar boletas desde Supabase
         async function loadTickets() {
             try {
+                if (!supabaseClient) {
+                    console.log('Supabase no disponible, usando datos locales');
+                    return;
+                }
+                
                 const { data, error } = await supabaseClient
                     .from('boletas')
                     .select('*')
@@ -652,7 +664,8 @@
                 updateStats();
             } catch (error) {
                 console.error('Error cargando boletas:', error);
-                throw error;
+                showAlert('Error cargando boletas: ' + error.message, 'danger');
+                // No lanzar error para permitir modo offline
             }
         }
 
@@ -745,6 +758,21 @@
             
             try {
                 document.getElementById('addSellerBtn').disabled = true;
+                
+                // Verificar si Supabase está disponible
+                if (!supabaseClient) {
+                    // Modo offline - agregar localmente
+                    const newSeller = {
+                        id: Date.now(),
+                        nombre: name
+                    };
+                    sellers.push(newSeller);
+                    document.getElementById('sellerName').value = '';
+                    updateSellerDropdown();
+                    updateSellersList();
+                    showAlert(`Vendedor "${name}" agregado localmente (modo offline)`, 'info');
+                    return;
+                }
                 
                 const { data, error } = await supabaseClient
                     .from('vendedores')
@@ -877,19 +905,7 @@
                     newFecha = null;
                 }
                 
-                // Actualizar en Supabase
-                const { error } = await supabaseClient
-                    .from('boletas')
-                    .upsert({
-                        numero: ticketNumber,
-                        estado: newState,
-                        vendedor: newVendedor,
-                        fecha: newFecha
-                    });
-                
-                if (error) throw error;
-                
-                // Actualizar localmente
+                // Actualizar localmente primero
                 tickets[ticketNumber] = {
                     numero: ticketNumber,
                     estado: newState,
@@ -908,8 +924,30 @@
                 updateStats();
                 updateSellersList();
                 
-                const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                showAlert(`Boleta ${ticketNumber} ${action} correctamente`, 'success');
+                // Intentar actualizar en Supabase si está disponible
+                if (supabaseClient) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('boletas')
+                            .upsert({
+                                numero: ticketNumber,
+                                estado: newState,
+                                vendedor: newVendedor,
+                                fecha: newFecha
+                            });
+                        
+                        if (error) throw error;
+                        
+                        const action = newState === 'vendida' ? 'vendida' : 'liberada';
+                        showAlert(`Boleta ${ticketNumber} ${action} correctamente`, 'success');
+                    } catch (error) {
+                        console.error('Error actualizando en Supabase:', error);
+                        showAlert(`Boleta ${ticketNumber} actualizada localmente (sin conexión)`, 'info');
+                    }
+                } else {
+                    const action = newState === 'vendida' ? 'vendida' : 'liberada';
+                    showAlert(`Boleta ${ticketNumber} ${action} localmente (modo offline)`, 'info');
+                }
                 
             } catch (error) {
                 console.error('Error actualizando boleta:', error);
@@ -989,22 +1027,7 @@
                 const ticketsArray = Array.from(selectedTickets);
                 const fecha = new Date().toISOString();
                 
-                // Preparar datos para actualización masiva
-                const updates = ticketsArray.map(numero => ({
-                    numero: numero,
-                    estado: 'vendida',
-                    vendedor: currentSellerData.nombre,
-                    fecha: fecha
-                }));
-                
-                // Actualizar en Supabase
-                const { error } = await supabaseClient
-                    .from('boletas')
-                    .upsert(updates);
-                
-                if (error) throw error;
-                
-                // Actualizar localmente
+                // Actualizar localmente primero
                 ticketsArray.forEach(numero => {
                     tickets[numero] = {
                         numero: numero,
@@ -1014,13 +1037,36 @@
                     };
                 });
                 
-                showAlert(`¡Venta confirmada! ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre}`, 'success');
-                
-                // Limpiar selección y actualizar
+                // Limpiar selección y actualizar UI
                 clearSelection();
                 createTicketGrid();
                 updateStats();
                 updateSellersList();
+                
+                // Intentar actualizar en Supabase si está disponible
+                if (supabaseClient) {
+                    try {
+                        const updates = ticketsArray.map(numero => ({
+                            numero: numero,
+                            estado: 'vendida',
+                            vendedor: currentSellerData.nombre,
+                            fecha: fecha
+                        }));
+                        
+                        const { error } = await supabaseClient
+                            .from('boletas')
+                            .upsert(updates);
+                        
+                        if (error) throw error;
+                        
+                        showAlert(`¡Venta confirmada! ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre}`, 'success');
+                    } catch (error) {
+                        console.error('Error sincronizando con Supabase:', error);
+                        showAlert(`Venta registrada localmente. ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre} (sin conexión)`, 'info');
+                    }
+                } else {
+                    showAlert(`Venta registrada localmente. ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre} (modo offline)`, 'info');
+                }
                 
             } catch (error) {
                 console.error('Error confirmando venta:', error);
@@ -1127,21 +1173,33 @@
                 try {
                     document.getElementById('resetBtn').disabled = true;
                     
-                    // Eliminar todas las boletas
-                    const { error: boletasError } = await supabaseClient
-                        .from('boletas')
-                        .delete()
-                        .neq('numero', 0); // Eliminar todas (usando condición que siempre es verdadera)
-                    
-                    if (boletasError) throw boletasError;
-                    
-                    // Eliminar todos los vendedores
-                    const { error: vendedoresError } = await supabaseClient
-                        .from('vendedores')
-                        .delete()
-                        .neq('id', 0); // Eliminar todas (usando condición que siempre es verdadera)
-                    
-                    if (vendedoresError) throw vendedoresError;
+                    if (supabaseClient) {
+                        // Si Supabase está disponible, resetear en la base de datos
+                        try {
+                            // Eliminar todas las boletas
+                            const { error: boletasError } = await supabaseClient
+                                .from('boletas')
+                                .delete()
+                                .neq('numero', 0); // Eliminar todas (usando condición que siempre es verdadera)
+                            
+                            if (boletasError) throw boletasError;
+                            
+                            // Eliminar todos los vendedores
+                            const { error: vendedoresError } = await supabaseClient
+                                .from('vendedores')
+                                .delete()
+                                .neq('id', 0); // Eliminar todas (usando condición que siempre es verdadera)
+                            
+                            if (vendedoresError) throw vendedoresError;
+                            
+                            showAlert('Sistema reiniciado en la base de datos', 'success');
+                        } catch (error) {
+                            console.error('Error reiniciando en Supabase:', error);
+                            showAlert('Reiniciando solo localmente (sin conexión)', 'info');
+                        }
+                    } else {
+                        showAlert('Reiniciando sistema localmente (modo offline)', 'info');
+                    }
                     
                     // Reinicializar datos locales
                     tickets = {};
@@ -1154,9 +1212,21 @@
                     document.getElementById('currentSeller').innerHTML = '<option value="">No hay vendedores</option>';
                     
                     // Reinicializar boletas
-                    await initializeTicketsIfNeeded();
+                    if (supabaseClient) {
+                        await initializeTicketsIfNeeded();
+                    } else {
+                        // Modo offline - crear boletas locales
+                        for (let i = 1; i <= 1000; i++) {
+                            tickets[i] = {
+                                numero: i,
+                                estado: 'disponible',
+                                vendedor: null,
+                                fecha: null
+                            };
+                        }
+                        updateStats();
+                    }
                     
-                    showAlert('Sistema reiniciado correctamente', 'success');
                     updateSellersList();
                     
                 } catch (error) {
@@ -1186,54 +1256,63 @@
 
         // Configurar actualización en tiempo real
         function setupRealTimeUpdates() {
-            if (!supabaseClient) return;
+            if (!supabaseClient) {
+                console.log('Supabase no disponible, tiempo real deshabilitado');
+                return;
+            }
             
-            // Suscribirse a cambios en boletas
-            supabaseClient
-                .channel('boletas-changes')
-                .on('postgres_changes', 
-                    { event: '*', schema: 'public', table: 'boletas' }, 
-                    (payload) => {
-                        console.log('Cambio en boletas:', payload);
-                        
-                        if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                            const newTicket = payload.new;
-                            tickets[newTicket.numero] = newTicket;
+            try {
+                // Suscribirse a cambios en boletas
+                supabaseClient
+                    .channel('boletas-changes')
+                    .on('postgres_changes', 
+                        { event: '*', schema: 'public', table: 'boletas' }, 
+                        (payload) => {
+                            console.log('Cambio en boletas:', payload);
                             
-                            // Actualizar visualmente si está en la vista actual
-                            const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${newTicket.numero})`);
-                            if (ticketElement) {
-                                ticketElement.className = `ticket ${newTicket.estado}`;
-                                ticketElement.title = newTicket.estado === 'vendida' ? 
-                                    `Vendida por: ${newTicket.vendedor}` : 'Disponible - Click para vender';
+                            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+                                const newTicket = payload.new;
+                                tickets[newTicket.numero] = newTicket;
+                                
+                                // Actualizar visualmente si está en la vista actual
+                                const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${newTicket.numero})`);
+                                if (ticketElement) {
+                                    ticketElement.className = `ticket ${newTicket.estado}`;
+                                    ticketElement.title = newTicket.estado === 'vendida' ? 
+                                        `Vendida por: ${newTicket.vendedor}` : 'Disponible - Click para vender';
+                                }
+                                
+                                // Actualizar dashboard si está visible
+                                const dashTicketElement = document.querySelector(`#dashboardTicketGrid .ticket:nth-child(${newTicket.numero})`);
+                                if (dashTicketElement) {
+                                    dashTicketElement.className = `ticket ${newTicket.estado}`;
+                                    dashTicketElement.title = newTicket.estado === 'vendida' ? 
+                                        `Vendida por: ${newTicket.vendedor}` : 'Disponible';
+                                }
+                                
+                                updateStats();
+                                updateSellersList();
                             }
-                            
-                            // Actualizar dashboard si está visible
-                            const dashTicketElement = document.querySelector(`#dashboardTicketGrid .ticket:nth-child(${newTicket.numero})`);
-                            if (dashTicketElement) {
-                                dashTicketElement.className = `ticket ${newTicket.estado}`;
-                                dashTicketElement.title = newTicket.estado === 'vendida' ? 
-                                    `Vendida por: ${newTicket.vendedor}` : 'Disponible';
-                            }
-                            
-                            updateStats();
-                            updateSellersList();
                         }
-                    }
-                )
-                .subscribe();
+                    )
+                    .subscribe();
 
-            // Suscribirse a cambios en vendedores
-            supabaseClient
-                .channel('vendedores-changes')
-                .on('postgres_changes', 
-                    { event: '*', schema: 'public', table: 'vendedores' }, 
-                    (payload) => {
-                        console.log('Cambio en vendedores:', payload);
-                        loadSellers(); // Recargar vendedores
-                    }
-                )
-                .subscribe();
+                // Suscribirse a cambios en vendedores
+                supabaseClient
+                    .channel('vendedores-changes')
+                    .on('postgres_changes', 
+                        { event: '*', schema: 'public', table: 'vendedores' }, 
+                        (payload) => {
+                            console.log('Cambio en vendedores:', payload);
+                            loadSellers(); // Recargar vendedores
+                        }
+                    )
+                    .subscribe();
+                    
+                console.log('Actualizaciones en tiempo real configuradas');
+            } catch (error) {
+                console.error('Error configurando tiempo real:', error);
+            }
         }
 
         // Modo offline - usar datos locales
