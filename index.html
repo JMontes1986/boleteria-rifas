@@ -292,15 +292,21 @@
             border: 1px solid #bee5eb;
         }
 
-        .connection-status {
+        .connection-controls {
             position: fixed;
             top: 20px;
             right: 20px;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .connection-status {
             padding: 10px 15px;
             border-radius: 20px;
             color: white;
             font-weight: bold;
-            z-index: 1000;
+            margin-bottom: 10px;
+            display: block;
         }
 
         .connection-status.connected {
@@ -309,6 +315,30 @@
 
         .connection-status.disconnected {
             background: #dc3545;
+        }
+
+        .test-connection-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            background: #17a2b8;
+            color: white;
+            transition: all 0.3s;
+            display: block;
+            width: 100%;
+        }
+
+        .test-connection-btn:hover:not(:disabled) {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .test-connection-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
         }
 
         .loading {
@@ -350,12 +380,23 @@
                 height: 35px;
                 font-size: 11px;
             }
+
+            .connection-controls {
+                position: static;
+                margin: 20px auto;
+                width: 200px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="connection-status" id="connectionStatus">
-        🔴 Conectando...
+    <div class="connection-controls">
+        <div class="connection-status" id="connectionStatus">
+            🔴 Conectando...
+        </div>
+        <button class="test-connection-btn" onclick="testConnection()" id="testConnBtn">
+            🔄 Probar Conexión
+        </button>
     </div>
 
     <div class="container">
@@ -399,7 +440,6 @@
                 
                 <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
                 <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
-                <button class="btn btn-primary" onclick="testConnection()" id="testConnBtn">Probar Conexión</button>
                 <button class="btn btn-primary" onclick="showDatabaseSetup()" id="setupBtn">Configurar Base de Datos</button>
                 
                 <div id="sellersList" style="margin-top: 20px;"></div>
@@ -1524,6 +1564,8 @@
         // Función para probar la conexión
         async function testConnection() {
             try {
+                document.getElementById('testConnBtn').disabled = true;
+                document.getElementById('testConnBtn').textContent = '⏳ Probando...';
                 showAlert('Probando conexión...', 'info');
                 
                 if (!supabaseClient) {
@@ -1539,7 +1581,7 @@
                 
                 if (error) throw error;
                 
-                showAlert('Conexión exitosa!', 'success');
+                showAlert('¡Conexión exitosa!', 'success');
                 updateConnectionStatus('connected');
                 
                 // Recargar datos
@@ -1554,6 +1596,9 @@
                 console.error('Error en test de conexión:', error);
                 showAlert('Error de conexión: ' + error.message, 'danger');
                 updateConnectionStatus('disconnected');
+            } finally {
+                document.getElementById('testConnBtn').disabled = false;
+                document.getElementById('testConnBtn').textContent = '🔄 Probar Conexión';
             }
         }
 
@@ -1620,6 +1665,26 @@
                 e.returnValue = 'Tiene boletas seleccionadas sin confirmar. ¿Está seguro de salir?';
             }
         });
+
+        // Función auxiliar para verificar conexión (llamada por setInterval)
+        async function checkConnection() {
+            if (supabaseClient) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('vendedores')
+                        .select('count', { count: 'exact', head: true })
+                        .limit(1);
+                    
+                    if (error) {
+                        updateConnectionStatus('disconnected');
+                    } else {
+                        updateConnectionStatus('connected');
+                    }
+                } catch (error) {
+                    updateConnectionStatus('disconnected');
+                }
+            }
+        }
     </script>
 </body>
 </html>
