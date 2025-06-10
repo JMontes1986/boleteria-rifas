@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Venta de Boletería - Rifas [SECURED]</title>
+    <title>Sistema de Venta de Boletería @J.montes86</title>
     
     <!-- Security Headers -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*.supabase.co;">
@@ -183,86 +183,49 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stats-grid.compact {
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 10px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .stat-card {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 10px;
             text-align: center;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        .stat-card.compact {
-            padding: 10px;
-            border-radius: 8px;
-        }
-
         .stat-card h3 {
-            font-size: 1.8em;
-            margin-bottom: 8px;
-        }
-
-        .stat-card.compact h3 {
-            font-size: 1.4em;
-            margin-bottom: 5px;
-        }
-
-        .stat-card p {
-            margin: 0;
-            font-size: 0.9em;
-            opacity: 0.9;
-        }
-
-        .stat-card.compact p {
-            font-size: 0.8em;
+            font-size: 2em;
+            margin-bottom: 10px;
         }
 
         .ticket-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 8px;
-            margin-top: 15px;
-            max-height: 70vh;
+            gap: 5px;
+            margin-top: 20px;
+            max-height: 400px;
             overflow-y: auto;
-            padding: 15px;
+            padding: 10px;
             border: 2px solid #dee2e6;
             border-radius: 10px;
             background: #f8f9fa;
         }
 
-        .ticket-grid.dashboard {
-            max-height: 75vh;
-            padding: 20px;
-        }
-
         .ticket {
             width: 60px;
-            height: 45px;
+            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 6px;
+            border-radius: 5px;
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
             cursor: pointer;
             transition: all 0.3s;
-            border: 2px solid transparent;
-        }
-
-        .ticket:hover {
-            transform: scale(1.05);
-            border-color: #007bff;
         }
 
         .ticket.disponible {
@@ -465,15 +428,15 @@
 
     <div class="container">
         <div class="header">
-            <h1>🎫 Sistema de Venta de Boletería [SECURED]</h1>
-            <p>Gestión de Rifas con Seguridad Avanzada</p>
+            <h1>🎫 Sistema de Venta de Boletería @J.montes86</h1>
+            <p>Gestión de Rifas</p>
         </div>
 
         <div class="tabs">
             <button class="tab active" onclick="showTab('admin')">👨‍💼 Administrador</button>
             <button class="tab" onclick="showTab('seller')">🛒 Vendedor</button>
             <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
-            <button class="tab" id="securityTab" onclick="showTab('security')" style="display: none;">🔒 Seguridad</button>
+            <button class="tab" onclick="showTab('security')">🔒 Seguridad</button>
         </div>
 
         <!-- Pestaña Administrador -->
@@ -508,49 +471,19 @@
             </div>
 
             <div id="adminPanel" style="display: none;">
-                <div class="admin-section">
-                    <h3>⚙️ Configuración del Sistema</h3>
-                    
-                    <div class="form-group">
-                        <label>Cantidad Total de Boletas:</label>
-                        <select id="totalTicketsSelect">
-                            <option value="100">100 boletas</option>
-                            <option value="500">500 boletas</option>
-                            <option value="1000" selected>1000 boletas</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Precio por Boleta ($):</label>
-                        <input type="number" id="ticketPriceInput" min="100" max="100000" step="50" value="1000" placeholder="Ingrese precio por boleta">
-                        <small style="color: #666;">Precio entre $100 y $100,000</small>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button class="btn btn-primary" onclick="updateSystemConfig()" id="updateConfigBtn">💾 Guardar Configuración</button>
-                        <button class="btn btn-info" onclick="loadSystemConfig()" id="loadConfigBtn">🔄 Cargar Configuración</button>
-                    </div>
-                    
-                    <div id="currentConfig" class="alert alert-info" style="margin-bottom: 20px;">
-                        📊 Configuración actual: <span id="configSummary">1000 boletas a $1,000 cada una</span>
-                    </div>
+                <h3>Gestión de Vendedores</h3>
+                
+                <div class="form-group">
+                    <label>Nombre del Vendedor:</label>
+                    <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor" maxlength="100">
                 </div>
-
-                <div class="admin-section">
-                    <h3>👥 Gestión de Vendedores</h3>
-                    
-                    <div class="form-group">
-                        <label>Nombre del Vendedor:</label>
-                        <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor" maxlength="100">
-                    </div>
-                    
-                    <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
-                    <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
-                    <button class="btn btn-primary" onclick="verifyDatabaseState()" id="verifyDbBtn">Verificar Estado BD</button>
-                    <button class="btn btn-primary" onclick="showSecurityLogs()" id="securityLogsBtn">Ver Logs de Seguridad</button>
-                    
-                    <div id="sellersList" style="margin-top: 20px;"></div>
-                </div>
+                
+                <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
+                <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
+                <button class="btn btn-primary" onclick="verifyDatabaseState()" id="verifyDbBtn">Verificar Estado BD</button>
+                <button class="btn btn-primary" onclick="showSecurityLogs()" id="securityLogsBtn">Ver Logs de Seguridad</button>
+                
+                <div id="sellersList" style="margin-top: 20px;"></div>
             </div>
         </div>
 
@@ -581,7 +514,7 @@
 
                 <div class="tickets-section">
                     <h4>Boletas (Click para vender/liberar)</h4>
-                    <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Precio por boleta: $<span id="currentTicketPrice">1,000</span></small></p>
+                    <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Click en cualquier boleta para cambiar su estado</small></p>
                     <div id="ticketGridLoading" class="loading">
                         <div class="spinner"></div>
                         Cargando boletas...
@@ -692,275 +625,10 @@
         let sellers = [];
         let currentSellerData = null;
         let captchaSolution = 0;
-        let systemConfig = {
-            totalTickets: 1000,
-            ticketPrice: 1000,
-            configId: 1
-        };
 
         // =========================
-        // FUNCIONES DE CONFIGURACIÓN DEL SISTEMA
+        // FUNCIONES DE SEGURIDAD
         // =========================
-
-        // Cargar configuración del sistema
-        async function loadSystemConfig() {
-            if (!validateSession()) {
-                showAlert('Sesión expirada', 'warning');
-                return;
-            }
-
-            try {
-                document.getElementById('loadConfigBtn').disabled = true;
-                showAlert('Cargando configuración del sistema...', 'info');
-
-                if (supabaseClient) {
-                    // Crear tabla de configuración si no existe
-                    await createConfigTableIfNeeded();
-                    
-                    const { data, error } = await supabaseClient
-                        .from('configuracion_sistema')
-                        .select('*')
-                        .eq('id', 1)
-                        .single();
-
-                    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
-                        throw error;
-                    }
-
-                    if (data) {
-                        systemConfig = {
-                            totalTickets: data.total_boletas,
-                            ticketPrice: data.precio_boleta,
-                            configId: data.id
-                        };
-                    } else {
-                        // Crear configuración por defecto
-                        await createDefaultConfig();
-                    }
-                } else {
-                    showAlert('Sin conexión a base de datos, usando configuración local', 'warning');
-                }
-
-                // Actualizar interfaz
-                document.getElementById('totalTicketsSelect').value = systemConfig.totalTickets;
-                document.getElementById('ticketPriceInput').value = systemConfig.ticketPrice;
-                updateConfigSummary();
-
-                showAlert('Configuración cargada correctamente', 'success');
-                logSecurityEvent('CONFIG_LOAD', `Configuración cargada: ${systemConfig.totalTickets} boletas a ${systemConfig.ticketPrice}`);
-
-            } catch (error) {
-                logSecurityEvent('CONFIG_ERROR', `Error cargando configuración: ${error.message}`, 'ERROR');
-                showAlert('Error cargando configuración: ' + error.message, 'danger');
-            } finally {
-                document.getElementById('loadConfigBtn').disabled = false;
-            }
-        }
-
-        // Crear tabla de configuración si no existe
-        async function createConfigTableIfNeeded() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('configuracion_sistema')
-                    .select('count', { count: 'exact', head: true })
-                    .limit(1);
-
-                if (error && error.message.includes('does not exist')) {
-                    // La tabla no existe, intentar crearla
-                    showAlert('Creando tabla de configuración...', 'info');
-                    // En producción, esto se haría con migraciones SQL
-                    logSecurityEvent('CONFIG_TABLE', 'Tabla de configuración necesita ser creada manualmente', 'WARNING');
-                    showAlert('NOTA: Tabla configuracion_sistema debe crearse manualmente en Supabase', 'warning');
-                }
-            } catch (error) {
-                console.error('Error verificando tabla configuración:', error);
-            }
-        }
-
-        // Crear configuración por defecto
-        async function createDefaultConfig() {
-            try {
-                const { data, error } = await supabaseClient
-                    .from('configuracion_sistema')
-                    .insert([{
-                        id: 1,
-                        total_boletas: 1000,
-                        precio_boleta: 1000,
-                        actualizado_por: securityState.currentSession.username,
-                        fecha_actualizacion: new Date().toISOString()
-                    }])
-                    .select();
-
-                if (error) throw error;
-
-                logSecurityEvent('CONFIG_CREATE', 'Configuración por defecto creada');
-            } catch (error) {
-                logSecurityEvent('CONFIG_ERROR', `Error creando configuración por defecto: ${error.message}`, 'ERROR');
-            }
-        }
-
-        // Actualizar configuración del sistema
-        async function updateSystemConfig() {
-            if (!validateSession()) {
-                showAlert('Sesión expirada', 'warning');
-                return;
-            }
-
-            const newTotalTickets = parseInt(document.getElementById('totalTicketsSelect').value);
-            const newTicketPrice = parseInt(document.getElementById('ticketPriceInput').value);
-
-            // Validaciones
-            if (!newTotalTickets || ![100, 500, 1000].includes(newTotalTickets)) {
-                showAlert('Cantidad de boletas inválida', 'danger');
-                return;
-            }
-
-            if (!newTicketPrice || newTicketPrice < 100 || newTicketPrice > 100000) {
-                showAlert('Precio por boleta debe estar entre $100 y $100,000', 'danger');
-                return;
-            }
-
-            // Verificar si hay cambios que requieran reinicio
-            const ticketCountChanged = newTotalTickets !== systemConfig.totalTickets;
-            const currentSoldTickets = Object.values(tickets).filter(t => t.estado === 'vendida').length;
-
-            if (ticketCountChanged && currentSoldTickets > 0) {
-                if (!confirm(`⚠️ Cambiar la cantidad de boletas reiniciará el sistema y eliminará todas las ventas actuales (${currentSoldTickets} boletas vendidas). ¿Continuar?`)) {
-                    return;
-                }
-            }
-
-            try {
-                document.getElementById('updateConfigBtn').disabled = true;
-                showAlert('Actualizando configuración del sistema...', 'info');
-
-                const oldConfig = { ...systemConfig };
-                systemConfig.totalTickets = newTotalTickets;
-                systemConfig.ticketPrice = newTicketPrice;
-
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient
-                        .from('configuracion_sistema')
-                        .upsert({
-                            id: 1,
-                            total_boletas: newTotalTickets,
-                            precio_boleta: newTicketPrice,
-                            actualizado_por: securityState.currentSession.username,
-                            fecha_actualizacion: new Date().toISOString()
-                        }, {
-                            onConflict: 'id'
-                        })
-                        .select();
-
-                    if (error) throw error;
-                }
-
-                // Si cambió el número de boletas, reinicializar
-                if (ticketCountChanged) {
-                    await reinitializeTicketsWithNewCount();
-                }
-
-                updateConfigSummary();
-                updateAllPriceDisplays();
-                
-                showAlert(`✅ Configuración actualizada: ${newTotalTickets} boletas a ${newTicketPrice.toLocaleString()} cada una`, 'success');
-                logSecurityEvent('CONFIG_UPDATE', `Configuración actualizada por ${securityState.currentSession.username}: ${oldConfig.totalTickets}→${newTotalTickets} boletas, ${oldConfig.ticketPrice}→${newTicketPrice}`);
-
-            } catch (error) {
-                logSecurityEvent('CONFIG_ERROR', `Error actualizando configuración: ${error.message}`, 'ERROR');
-                showAlert('Error actualizando configuración: ' + error.message, 'danger');
-                
-                // Revertir cambios
-                systemConfig.totalTickets = oldConfig.totalTickets;
-                systemConfig.ticketPrice = oldConfig.ticketPrice;
-                document.getElementById('totalTicketsSelect').value = oldConfig.totalTickets;
-                document.getElementById('ticketPriceInput').value = oldConfig.ticketPrice;
-                
-            } finally {
-                document.getElementById('updateConfigBtn').disabled = false;
-            }
-        }
-
-        // Reinicializar boletas con nueva cantidad
-        async function reinitializeTicketsWithNewCount() {
-            try {
-                showAlert(`Reinicializando con ${systemConfig.totalTickets} boletas...`, 'info');
-
-                if (supabaseClient) {
-                    // Limpiar boletas existentes
-                    const { error: deleteError } = await supabaseClient
-                        .from('boletas')
-                        .delete()
-                        .neq('numero', 0);
-
-                    if (deleteError) throw deleteError;
-
-                    // Crear nuevas boletas
-                    const boletasArray = [];
-                    for (let i = 1; i <= systemConfig.totalTickets; i++) {
-                        boletasArray.push({
-                            numero: i,
-                            estado: 'disponible',
-                            vendedor: null,
-                            fecha: null
-                        });
-                    }
-
-                    // Insertar en lotes
-                    for (let i = 0; i < boletasArray.length; i += 100) {
-                        const batch = boletasArray.slice(i, i + 100);
-                        const { error: insertError } = await supabaseClient
-                            .from('boletas')
-                            .insert(batch);
-
-                        if (insertError) throw insertError;
-                    }
-                }
-
-                // Actualizar datos locales
-                tickets = {};
-                for (let i = 1; i <= systemConfig.totalTickets; i++) {
-                    tickets[i] = {
-                        numero: i,
-                        estado: 'disponible',
-                        vendedor: null,
-                        fecha: null
-                    };
-                }
-
-                // Actualizar interfaz
-                if (currentSellerData) {
-                    createTicketGrid();
-                }
-                updateStats();
-
-                showAlert(`Sistema reinicializado con ${systemConfig.totalTickets} boletas`, 'success');
-                logSecurityEvent('TICKETS_REINIT', `Sistema reinicializado con ${systemConfig.totalTickets} boletas`);
-
-            } catch (error) {
-                logSecurityEvent('REINIT_ERROR', `Error reinicializando boletas: ${error.message}`, 'ERROR');
-                throw error;
-            }
-        }
-
-        // Actualizar resumen de configuración
-        function updateConfigSummary() {
-            const summary = `${systemConfig.totalTickets} boletas a ${systemConfig.ticketPrice.toLocaleString()} cada una`;
-            document.getElementById('configSummary').textContent = summary;
-        }
-
-        // Actualizar todos los displays de precio en la interfaz
-        function updateAllPriceDisplays() {
-            // Actualizar precio en sección de vendedores
-            const currentPriceSpan = document.getElementById('currentTicketPrice');
-            if (currentPriceSpan) {
-                currentPriceSpan.textContent = systemConfig.ticketPrice.toLocaleString();
-            }
-            
-            updateStats();
-            updateDashboard();
-            updateSellersList();
-        }
 
         // Sanitizar input para prevenir XSS
         function sanitizeInput(input) {
@@ -1326,14 +994,9 @@
         async function loadInitialData() {
             try {
                 updateConnectionStatus('connected');
-                
-                // Cargar configuración del sistema primero
-                await loadSystemConfig();
-                
                 await loadSellers();
                 await loadTickets();
                 await initializeTicketsIfNeeded();
-                
                 showAlert('Sistema cargado con seguridad avanzada', 'success');
                 logSecurityEvent('APP_INIT', 'Aplicación inicializada correctamente');
             } catch (error) {
@@ -1404,10 +1067,10 @@
                 if (error) throw error;
                 
                 if (count === 0) {
-                    showAlert(`Inicializando ${systemConfig.totalTickets} boletas...`, 'info');
+                    showAlert('Inicializando 1000 boletas...', 'info');
                     
                     const boletasArray = [];
-                    for (let i = 1; i <= systemConfig.totalTickets; i++) {
+                    for (let i = 1; i <= 1000; i++) {
                         boletasArray.push({
                             numero: i,
                             estado: 'disponible',
@@ -1426,8 +1089,8 @@
                     }
                     
                     await loadTickets();
-                    showAlert(`${systemConfig.totalTickets} boletas inicializadas correctamente`, 'success');
-                    logSecurityEvent('DATA_INIT', `${systemConfig.totalTickets} boletas inicializadas`);
+                    showAlert('1000 boletas inicializadas correctamente', 'success');
+                    logSecurityEvent('DATA_INIT', '1000 boletas inicializadas');
                 }
             } catch (error) {
                 logSecurityEvent('DATA_ERROR', `Error inicializando boletas: ${error.message}`, 'ERROR');
@@ -1447,10 +1110,10 @@
                 return;
             }
             
-            // Validar número de boleta según configuración actual
-            if (ticketNumber < 1 || ticketNumber > systemConfig.totalTickets) {
-                logSecurityEvent('INVALID_TICKET', `Intento de acceso a boleta inválida: ${ticketNumber} (rango válido: 1-${systemConfig.totalTickets})`, 'WARNING');
-                showAlert(`Número de boleta inválido. Rango válido: 1-${systemConfig.totalTickets}`, 'danger');
+            // Validar número de boleta
+            if (ticketNumber < 1 || ticketNumber > 1000) {
+                logSecurityEvent('INVALID_TICKET', `Intento de acceso a boleta inválida: ${ticketNumber}`, 'WARNING');
+                showAlert('Número de boleta inválido', 'danger');
                 return;
             }
             
@@ -1496,9 +1159,8 @@
                     };
                     
                     const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                    const revenue = newState === 'vendida' ? `(${systemConfig.ticketPrice.toLocaleString()})` : '';
-                    showAlert(`Boleta ${ticketNumber} ${action} correctamente ${revenue}`, 'success');
-                    logSecurityEvent('TICKET_UPDATE', `Boleta ${ticketNumber} ${action} por ${currentSellerData.nombre} - Precio: ${systemConfig.ticketPrice}`);
+                    showAlert(`Boleta ${ticketNumber} ${action} correctamente`, 'success');
+                    logSecurityEvent('TICKET_UPDATE', `Boleta ${ticketNumber} ${action} por ${currentSellerData.nombre}`);
                 } else {
                     showAlert('Sin conexión a base de datos', 'warning');
                 }
@@ -1508,8 +1170,7 @@
                 if (ticketElement) {
                     ticketElement.className = `ticket ${newState}`;
                     ticketElement.title = newState === 'vendida' ? 
-                        `Vendida por: ${escapeHtml(newVendedor)} - Precio: ${systemConfig.ticketPrice.toLocaleString()}` : 
-                        `Disponible - Click para vender - Precio: ${systemConfig.ticketPrice.toLocaleString()}`;
+                        `Vendida por: ${escapeHtml(newVendedor)}` : 'Disponible - Click para vender';
                 }
                 
                 updateStats();
@@ -1580,7 +1241,6 @@
                 
                 const disponibles = boletasData.filter(b => b.estado === 'disponible').length;
                 const vendidas = boletasData.filter(b => b.estado === 'vendida').length;
-                const totalIngresos = vendidas * systemConfig.ticketPrice;
                 
                 const { data: vendedoresData, error: vendedoresError, count: totalVendedores } = await supabaseClient
                     .from('vendedores')
@@ -1589,17 +1249,10 @@
                 if (vendedoresError) throw vendedoresError;
                 
                 let resumen = `📊 ESTADO DE LA BASE DE DATOS:\n\n`;
-                resumen += `⚙️ CONFIGURACIÓN:\n`;
-                resumen += `   • Boletas configuradas: ${systemConfig.totalTickets}\n`;
-                resumen += `   • Precio por boleta: ${systemConfig.ticketPrice.toLocaleString()}\n`;
-                resumen += `   • Ingresos potenciales máximos: ${(systemConfig.totalTickets * systemConfig.ticketPrice).toLocaleString()}\n\n`;
-                
                 resumen += `🎫 BOLETAS:\n`;
                 resumen += `   • Total en BD: ${totalBoletas}\n`;
                 resumen += `   • Disponibles: ${disponibles}\n`;
-                resumen += `   • Vendidas: ${vendidas}\n`;
-                resumen += `   • Ingresos actuales: ${totalIngresos.toLocaleString()}\n\n`;
-                
+                resumen += `   • Vendidas: ${vendidas}\n\n`;
                 resumen += `👥 VENDEDORES:\n`;
                 resumen += `   • Total: ${totalVendedores}\n\n`;
                 
@@ -1607,31 +1260,8 @@
                     resumen += `📈 VENTAS POR VENDEDOR:\n`;
                     vendedoresData.forEach(vendedor => {
                         const ventasVendedor = boletasData.filter(b => b.vendedor === vendedor.nombre).length;
-                        const ingresosVendedor = ventasVendedor * systemConfig.ticketPrice;
-                        resumen += `   • ${vendedor.nombre}: ${ventasVendedor} boletas (${ingresosVendedor.toLocaleString()})\n`;
+                        resumen += `   • ${vendedor.nombre}: ${ventasVendedor} boletas ($${ventasVendedor * 1000})\n`;
                     });
-                }
-                
-                // Verificar inconsistencias
-                if (totalBoletas !== systemConfig.totalTickets) {
-                    resumen += `\n⚠️ ADVERTENCIAS:\n`;
-                    resumen += `   • Cantidad de boletas en BD (${totalBoletas}) no coincide con configuración (${systemConfig.totalTickets})\n`;
-                }
-                
-                const boletasSinNumero = boletasData.filter(b => !b.numero || b.numero < 1 || b.numero > systemConfig.totalTickets);
-                if (boletasSinNumero.length > 0) {
-                    if (!resumen.includes('⚠️ ADVERTENCIAS:')) {
-                        resumen += `\n⚠️ ADVERTENCIAS:\n`;
-                    }
-                    resumen += `   • ${boletasSinNumero.length} boletas con números fuera del rango válido\n`;
-                }
-                
-                const boletasVendidasSinVendedor = boletasData.filter(b => b.estado === 'vendida' && !b.vendedor);
-                if (boletasVendidasSinVendedor.length > 0) {
-                    if (!resumen.includes('⚠️ ADVERTENCIAS:')) {
-                        resumen += `\n⚠️ ADVERTENCIAS:\n`;
-                    }
-                    resumen += `   • ${boletasVendidasSinVendedor.length} boletas vendidas sin vendedor asignado\n`;
                 }
                 
                 alert(resumen);
@@ -1722,8 +1352,7 @@
             let html = '<h4>Vendedores Registrados:</h4><ul>';
             sellers.forEach(seller => {
                 const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
-                const ingresos = ventas * systemConfig.ticketPrice;
-                html += `<li>${escapeHtml(seller.nombre)} - Ventas: ${ventas} - Ingresos: ${ingresos.toLocaleString()}</li>`;
+                html += `<li>${escapeHtml(seller.nombre)} - Ventas: ${ventas} - Ingresos: $${ventas * 1000}</li>`;
             });
             html += '</ul>';
             container.innerHTML = html;
@@ -1758,7 +1387,7 @@
             grid.innerHTML = '';
             
             setTimeout(() => {
-                for (let i = 1; i <= systemConfig.totalTickets; i++) {
+                for (let i = 1; i <= 1000; i++) {
                     const ticket = document.createElement('div');
                     const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null };
                     
@@ -1767,9 +1396,9 @@
                     ticket.onclick = () => toggleTicketState(i);
                     
                     if (ticketData.estado === 'vendida') {
-                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} - Precio: ${systemConfig.ticketPrice.toLocaleString()}`;
+                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')}`;
                     } else {
-                        ticket.title = `Disponible - Click para vender - Precio: ${systemConfig.ticketPrice.toLocaleString()}`;
+                        ticket.title = 'Disponible - Click para vender';
                     }
                     
                     grid.appendChild(ticket);
@@ -1784,11 +1413,11 @@
         function updateStats() {
             const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
             const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
-            const revenue = sold * systemConfig.ticketPrice;
+            const revenue = sold * 1000;
             
             document.getElementById('availableCount').textContent = available;
             document.getElementById('soldCount').textContent = sold;
-            document.getElementById('revenueCount').textContent = `${revenue.toLocaleString()}`;
+            document.getElementById('revenueCount').textContent = `$${revenue.toLocaleString()}`;
         }
 
         // Actualizar dashboard
@@ -1804,22 +1433,21 @@
                 
                 const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
                 const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
-                const revenue = sold * systemConfig.ticketPrice;
+                const revenue = sold * 1000;
                 
                 document.getElementById('dashAvailable').textContent = available;
                 document.getElementById('dashSold').textContent = sold;
                 document.getElementById('dashRevenue').textContent = `${revenue.toLocaleString()}`;
                 
                 dashGrid.innerHTML = '';
-                for (let i = 1; i <= systemConfig.totalTickets; i++) {
+                for (let i = 1; i <= 1000; i++) {
                     const ticket = document.createElement('div');
                     const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null };
                     
                     ticket.className = `ticket ${ticketData.estado}`;
                     ticket.textContent = i;
                     ticket.title = ticketData.estado === 'vendida' ? 
-                        `Vendida por: ${escapeHtml(ticketData.vendedor)} - Precio: ${systemConfig.ticketPrice.toLocaleString()}` : 
-                        `Disponible - Precio: ${systemConfig.ticketPrice.toLocaleString()}`;
+                        `Vendida por: ${escapeHtml(ticketData.vendedor)}` : 'Disponible';
                     dashGrid.appendChild(ticket);
                 }
                 
@@ -1845,7 +1473,7 @@
                 html += '<div class="stats-grid">';
                 sellers.forEach(seller => {
                     const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
-                    const ingresos = ventas * systemConfig.ticketPrice;
+                    const ingresos = ventas * 1000;
                     html += `
                         <div class="stat-card">
                             <h3>${ventas}</h3>
