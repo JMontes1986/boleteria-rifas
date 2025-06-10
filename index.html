@@ -441,6 +441,7 @@
                 <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
                 <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
                 <button class="btn btn-primary" onclick="showDatabaseSetup()" id="setupBtn">Configurar Base de Datos</button>
+                <button class="btn btn-primary" onclick="verifyDatabaseState()" id="verifyDbBtn">Verificar Estado BD</button>
                 
                 <div id="sellersList" style="margin-top: 20px;"></div>
             </div>
@@ -1118,13 +1119,63 @@
                     newFecha = null;
                 }
                 
-                // Actualizar localmente primero
-                tickets[ticketNumber] = {
-                    numero: ticketNumber,
-                    estado: newState,
-                    vendedor: newVendedor,
-                    fecha: newFecha
-                };
+                // Intentar actualizar en Supabase PRIMERO si está disponible
+                if (supabaseClient) {
+                    try {
+                        console.log(`Actualizando boleta ${ticketNumber} en Supabase:`, {
+                            numero: ticketNumber,
+                            estado: newState,
+                            vendedor: newVendedor,
+                            fecha: newFecha
+                        });
+                        
+                        const { data, error } = await supabaseClient
+                            .from('boletas')
+                            .upsert({
+                                numero: ticketNumber,
+                                estado: newState,
+                                vendedor: newVendedor,
+                                fecha: newFecha
+                            }, {
+                                onConflict: 'numero'
+                            })
+                            .select();
+                        
+                        if (error) {
+                            console.error('Error de Supabase:', error);
+                            throw error;
+                        }
+                        
+                        console.log('Boleta actualizada en Supabase:', data);
+                        
+                        // Actualizar localmente solo después del éxito
+                        tickets[ticketNumber] = {
+                            numero: ticketNumber,
+                            estado: newState,
+                            vendedor: newVendedor,
+                            fecha: newFecha
+                        };
+                        
+                        const action = newState === 'vendida' ? 'vendida' : 'liberada';
+                        showAlert(`Boleta ${ticketNumber} ${action} correctamente`, 'success');
+                        
+                    } catch (error) {
+                        console.error('Error actualizando en Supabase:', error);
+                        showAlert(`Error actualizando en la base de datos: ${error.message}`, 'danger');
+                        return; // No actualizar localmente si falló en Supabase
+                    }
+                } else {
+                    // Solo actualizar localmente si no hay Supabase
+                    tickets[ticketNumber] = {
+                        numero: ticketNumber,
+                        estado: newState,
+                        vendedor: newVendedor,
+                        fecha: newFecha
+                    };
+                    
+                    const action = newState === 'vendida' ? 'vendida' : 'liberada';
+                    showAlert(`Boleta ${ticketNumber} ${action} localmente (modo offline)`, 'info');
+                }
                 
                 // Actualizar visualmente
                 const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${ticketNumber})`);
@@ -1136,31 +1187,6 @@
                 
                 updateStats();
                 updateSellersList();
-                
-                // Intentar actualizar en Supabase si está disponible
-                if (supabaseClient) {
-                    try {
-                        const { error } = await supabaseClient
-                            .from('boletas')
-                            .upsert({
-                                numero: ticketNumber,
-                                estado: newState,
-                                vendedor: newVendedor,
-                                fecha: newFecha
-                            });
-                        
-                        if (error) throw error;
-                        
-                        const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                        showAlert(`Boleta ${ticketNumber} ${action} correctamente`, 'success');
-                    } catch (error) {
-                        console.error('Error actualizando en Supabase:', error);
-                        showAlert(`Boleta ${ticketNumber} actualizada localmente (sin conexión)`, 'info');
-                    }
-                } else {
-                    const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                    showAlert(`Boleta ${ticketNumber} ${action} localmente (modo offline)`, 'info');
-                }
                 
             } catch (error) {
                 console.error('Error actualizando boleta:', error);
@@ -1240,25 +1266,13 @@
                 const ticketsArray = Array.from(selectedTickets);
                 const fecha = new Date().toISOString();
                 
-                // Actualizar localmente primero
-                ticketsArray.forEach(numero => {
-                    tickets[numero] = {
-                        numero: numero,
-                        estado: 'vendida',
-                        vendedor: currentSellerData.nombre,
-                        fecha: fecha
-                    };
-                });
+                showAlert(`Procesando venta de ${ticketsArray.length} boletas...`, 'info');
                 
-                // Limpiar selección y actualizar UI
-                clearSelection();
-                createTicketGrid();
-                updateStats();
-                updateSellersList();
-                
-                // Intentar actualizar en Supabase si está disponible
+                // Intentar actualizar en Supabase PRIMERO si está disponible
                 if (supabaseClient) {
                     try {
+                        console.log('Actualizando boletas en Supabase:', ticketsArray);
+                        
                         const updates = ticketsArray.map(numero => ({
                             numero: numero,
                             estado: 'vendida',
@@ -1266,20 +1280,72 @@
                             fecha: fecha
                         }));
                         
-                        const { error } = await supabaseClient
-                            .from('boletas')
-                            .upsert(updates);
+                        // Usar transacción o actualizar una por una para mejor control
+                        let successCount = 0;
+                        let errorCount = 0;
                         
-                        if (error) throw error;
+                        for (const update of updates) {
+                            try {
+                                const { data, error } = await supabaseClient
+                                    .from('boletas')
+                                    .upsert(update, {
+                                        onConflict: 'numero'
+                                    })
+                                    .select();
+                                
+                                if (error) {
+                                    console.error(`Error actualizando boleta ${update.numero}:`, error);
+                                    errorCount++;
+                                } else {
+                                    console.log(`Boleta ${update.numero} actualizada:`, data);
+                                    successCount++;
+                                    
+                                    // Actualizar localmente solo las exitosas
+                                    tickets[update.numero] = {
+                                        numero: update.numero,
+                                        estado: 'vendida',
+                                        vendedor: currentSellerData.nombre,
+                                        fecha: fecha
+                                    };
+                                }
+                            } catch (individualError) {
+                                console.error(`Error individual boleta ${update.numero}:`, individualError);
+                                errorCount++;
+                            }
+                        }
                         
-                        showAlert(`¡Venta confirmada! ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre}`, 'success');
+                        if (successCount > 0) {
+                            showAlert(`¡Venta exitosa! ${successCount} boletas vendidas por ${currentSellerData.nombre}`, 'success');
+                        }
+                        
+                        if (errorCount > 0) {
+                            showAlert(`Advertencia: ${errorCount} boletas no se pudieron actualizar en la base de datos`, 'danger');
+                        }
+                        
                     } catch (error) {
-                        console.error('Error sincronizando con Supabase:', error);
-                        showAlert(`Venta registrada localmente. ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre} (sin conexión)`, 'info');
+                        console.error('Error general en venta masiva:', error);
+                        showAlert(`Error en la venta: ${error.message}`, 'danger');
+                        return; // No continuar si hubo error general
                     }
                 } else {
+                    // Modo offline - actualizar solo localmente
+                    ticketsArray.forEach(numero => {
+                        tickets[numero] = {
+                            numero: numero,
+                            estado: 'vendida',
+                            vendedor: currentSellerData.nombre,
+                            fecha: fecha
+                        };
+                    });
+                    
                     showAlert(`Venta registrada localmente. ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre} (modo offline)`, 'info');
                 }
+                
+                // Limpiar selección y actualizar UI
+                clearSelection();
+                createTicketGrid();
+                updateStats();
+                updateSellersList();
                 
             } catch (error) {
                 console.error('Error confirmando venta:', error);
@@ -1599,6 +1665,81 @@
             } finally {
                 document.getElementById('testConnBtn').disabled = false;
                 document.getElementById('testConnBtn').textContent = '🔄 Probar Conexión';
+            }
+        }
+
+        // Verificar estado de la base de datos
+        async function verifyDatabaseState() {
+            if (!supabaseClient) {
+                showAlert('No hay conexión con Supabase', 'danger');
+                return;
+            }
+            
+            try {
+                document.getElementById('verifyDbBtn').disabled = true;
+                showAlert('Verificando estado de la base de datos...', 'info');
+                
+                // Verificar boletas
+                const { data: boletasData, error: boletasError, count: totalBoletas } = await supabaseClient
+                    .from('boletas')
+                    .select('*', { count: 'exact' });
+                
+                if (boletasError) throw boletasError;
+                
+                // Contar por estado
+                const disponibles = boletasData.filter(b => b.estado === 'disponible').length;
+                const vendidas = boletasData.filter(b => b.estado === 'vendida').length;
+                
+                // Verificar vendedores
+                const { data: vendedoresData, error: vendedoresError, count: totalVendedores } = await supabaseClient
+                    .from('vendedores')
+                    .select('*', { count: 'exact' });
+                
+                if (vendedoresError) throw vendedoresError;
+                
+                // Mostrar resumen detallado
+                let resumen = `📊 ESTADO DE LA BASE DE DATOS:\n\n`;
+                resumen += `🎫 BOLETAS:\n`;
+                resumen += `   • Total en BD: ${totalBoletas}\n`;
+                resumen += `   • Disponibles: ${disponibles}\n`;
+                resumen += `   • Vendidas: ${vendidas}\n\n`;
+                resumen += `👥 VENDEDORES:\n`;
+                resumen += `   • Total: ${totalVendedores}\n\n`;
+                
+                if (vendedoresData.length > 0) {
+                    resumen += `📈 VENTAS POR VENDEDOR:\n`;
+                    vendedoresData.forEach(vendedor => {
+                        const ventasVendedor = boletasData.filter(b => b.vendedor === vendedor.nombre).length;
+                        resumen += `   • ${vendedor.nombre}: ${ventasVendedor} boletas (${ventasVendedor * 1000})\n`;
+                    });
+                }
+                
+                // Verificar inconsistencias
+                const boletasSinNumero = boletasData.filter(b => !b.numero || b.numero < 1 || b.numero > 1000);
+                if (boletasSinNumero.length > 0) {
+                    resumen += `\n⚠️ ADVERTENCIAS:\n`;
+                    resumen += `   • ${boletasSinNumero.length} boletas con números inválidos\n`;
+                }
+                
+                const boletasVendidasSinVendedor = boletasData.filter(b => b.estado === 'vendida' && !b.vendedor);
+                if (boletasVendidasSinVendedor.length > 0) {
+                    resumen += `   • ${boletasVendidasSinVendedor.length} boletas vendidas sin vendedor asignado\n`;
+                }
+                
+                console.log('Estado de la base de datos:', {
+                    boletas: boletasData,
+                    vendedores: vendedoresData,
+                    resumen: resumen
+                });
+                
+                alert(resumen);
+                showAlert('Verificación completada. Ver consola para detalles', 'success');
+                
+            } catch (error) {
+                console.error('Error verificando base de datos:', error);
+                showAlert('Error verificando base de datos: ' + error.message, 'danger');
+            } finally {
+                document.getElementById('verifyDbBtn').disabled = false;
             }
         }
 
