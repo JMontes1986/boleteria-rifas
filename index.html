@@ -41,7 +41,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -86,6 +86,10 @@
         .tab.active {
             background: #007bff;
             color: white;
+        }
+
+        .tab.hidden {
+            display: none;
         }
 
         .tab-content {
@@ -181,51 +185,89 @@
             transform: translateY(-2px);
         }
 
+        /* Estadísticas más pequeñas para el dashboard */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid.compact {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
         .stat-card {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            padding: 20px;
-            border-radius: 10px;
+            padding: 15px;
+            border-radius: 8px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-card.compact {
+            padding: 10px;
         }
 
         .stat-card h3 {
-            font-size: 2em;
-            margin-bottom: 10px;
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card.compact h3 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 0.9em;
+        }
+
+        .stat-card.compact p {
+            font-size: 0.8em;
         }
 
         .ticket-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 5px;
-            margin-top: 20px;
-            max-height: 400px;
+            grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+            gap: 3px;
+            margin-top: 15px;
+            max-height: 500px;
             overflow-y: auto;
-            padding: 10px;
+            padding: 15px;
             border: 2px solid #dee2e6;
             border-radius: 10px;
             background: #f8f9fa;
         }
 
+        /* Grid más grande para el dashboard */
+        .ticket-grid.dashboard {
+            max-height: 600px;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 4px;
+            padding: 20px;
+        }
+
         .ticket {
-            width: 60px;
-            height: 40px;
+            width: 45px;
+            height: 35px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 5px;
+            border-radius: 4px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 11px;
             cursor: pointer;
             transition: all 0.3s;
+        }
+
+        .ticket.dashboard {
+            width: 50px;
+            height: 40px;
+            font-size: 12px;
         }
 
         .ticket.disponible {
@@ -238,6 +280,12 @@
             color: white;
         }
 
+        .ticket:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
         .tickets-section {
             margin-top: 20px;
         }
@@ -245,11 +293,51 @@
         .tickets-section h4 {
             margin-bottom: 10px;
             color: #333;
+            font-size: 1.2em;
+        }
+
+        .tickets-section.dashboard h4 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
         }
 
         .tickets-section p {
             margin-bottom: 15px;
             color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Ventas por vendedor más compacto en dashboard */
+        .sales-by-seller {
+            margin-bottom: 15px;
+        }
+
+        .sales-by-seller h4 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .sales-by-seller .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .sales-by-seller .stat-card {
+            padding: 8px;
+        }
+
+        .sales-by-seller .stat-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 3px;
+        }
+
+        .sales-by-seller .stat-card p {
+            font-size: 0.75em;
+        }
+
+        .sales-by-seller .stat-card small {
+            font-size: 0.7em;
         }
 
         .alert {
@@ -388,16 +476,38 @@
         }
 
         @media (max-width: 768px) {
+            .container {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+            }
+            
             .stats-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-grid.compact {
+                grid-template-columns: repeat(3, 1fr);
             }
             
             .ticket-grid {
-                grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+                grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+                gap: 2px;
+                padding: 10px;
+            }
+            
+            .ticket-grid.dashboard {
+                grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
             }
             
             .ticket {
-                width: 50px;
+                width: 40px;
+                height: 30px;
+                font-size: 10px;
+            }
+
+            .ticket.dashboard {
+                width: 45px;
                 height: 35px;
                 font-size: 11px;
             }
@@ -406,6 +516,10 @@
                 position: static;
                 margin: 20px auto;
                 width: 200px;
+            }
+
+            .sales-by-seller .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -436,7 +550,7 @@
             <button class="tab active" onclick="showTab('admin')">👨‍💼 Administrador</button>
             <button class="tab" onclick="showTab('seller')">🛒 Vendedor</button>
             <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
-            <button class="tab" onclick="showTab('security')">🔒 Seguridad</button>
+            <button class="tab hidden" id="securityTab" onclick="showTab('security')">🔒 Seguridad</button>
         </div>
 
         <!-- Pestaña Administrador -->
@@ -524,36 +638,42 @@
             </div>
         </div>
 
-        <!-- Pestaña Dashboard -->
+        <!-- Pestaña Dashboard (MEJORADA) -->
         <div id="dashboard" class="tab-content">
             <h3>📊 Dashboard General</h3>
             
-            <div class="stats-grid">
-                <div class="stat-card">
+            <!-- Estadísticas compactas -->
+            <div class="stats-grid compact">
+                <div class="stat-card compact">
                     <h3 id="dashAvailable">-</h3>
-                    <p>Boletas Disponibles</p>
+                    <p>Disponibles</p>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card compact">
                     <h3 id="dashSold">-</h3>
-                    <p>Total Vendidas</p>
+                    <p>Vendidas</p>
                 </div>
-                <div class="stat-card">
+                <div class="stat-card compact">
                     <h3 id="dashRevenue">$-</h3>
-                    <p>Ingresos (x$1000)</p>
+                    <p>Ingresos</p>
                 </div>
             </div>
 
-            <div id="salesBySeller"></div>
+            <!-- Ventas por vendedor compacto -->
+            <div id="salesBySeller" class="sales-by-seller"></div>
             
-            <h4>Estado de Todas las Boletas</h4>
-            <div id="dashboardLoading" class="loading">
-                <div class="spinner"></div>
-                Cargando dashboard...
+            <!-- Grid de boletas más prominente -->
+            <div class="tickets-section dashboard">
+                <h4>🎫 Estado de Todas las Boletas</h4>
+                <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Vista completa del sistema</small></p>
+                <div id="dashboardLoading" class="loading">
+                    <div class="spinner"></div>
+                    Cargando dashboard...
+                </div>
+                <div class="ticket-grid dashboard" id="dashboardTicketGrid" style="display: none;"></div>
             </div>
-            <div class="ticket-grid" id="dashboardTicketGrid" style="display: none;"></div>
         </div>
 
-        <!-- Pestaña Seguridad -->
+        <!-- Pestaña Seguridad (SOLO VISIBLE PARA ADMIN) -->
         <div id="security" class="tab-content">
             <h3>🔒 Panel de Seguridad</h3>
             
@@ -600,7 +720,6 @@
         // CONFIGURACIÓN DE SEGURIDAD
         // =========================
         
-        // NO MÁS CREDENCIALES HARDCODEADAS
         const SECURE_CONFIG = {
             MAX_LOGIN_ATTEMPTS: 3,
             LOCKOUT_TIME: 5 * 60 * 1000, // 5 minutos
@@ -706,6 +825,9 @@
             securityState.activeSessions = 1;
             updateSessionInfo();
             
+            // Mostrar pestaña de seguridad para administradores
+            toggleSecurityTab(true);
+            
             // Auto-logout después del timeout
             setTimeout(() => {
                 if (securityState.currentSession && securityState.currentSession.token === sessionToken) {
@@ -737,8 +859,26 @@
                 securityState.currentSession = null;
                 securityState.activeSessions = 0;
                 document.getElementById('adminPanel').style.display = 'none';
+                
+                // Ocultar pestaña de seguridad
+                toggleSecurityTab(false);
+                
                 updateSessionInfo();
                 showAlert('Sesión cerrada por seguridad', 'info');
+            }
+        }
+
+        // Mostrar/ocultar pestaña de seguridad
+        function toggleSecurityTab(show) {
+            const securityTab = document.getElementById('securityTab');
+            if (show) {
+                securityTab.classList.remove('hidden');
+            } else {
+                securityTab.classList.add('hidden');
+                // Si está en la pestaña de seguridad, cambiar a dashboard
+                if (document.getElementById('security').classList.contains('active')) {
+                    showTab('dashboard');
+                }
             }
         }
 
@@ -1006,8 +1146,6 @@
             }
         }
 
-        // Las demás funciones permanecen igual pero con logs de seguridad...
-        
         // Cargar vendedores
         async function loadSellers() {
             try {
@@ -1182,8 +1320,6 @@
             }
         }
 
-        // Resto de funciones con ajustes de seguridad...
-        
         // Sistema de pestañas
         function showTab(tabName) {
             document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
@@ -1437,14 +1573,14 @@
                 
                 document.getElementById('dashAvailable').textContent = available;
                 document.getElementById('dashSold').textContent = sold;
-                document.getElementById('dashRevenue').textContent = `${revenue.toLocaleString()}`;
+                document.getElementById('dashRevenue').textContent = `$${revenue.toLocaleString()}`;
                 
                 dashGrid.innerHTML = '';
                 for (let i = 1; i <= 1000; i++) {
                     const ticket = document.createElement('div');
                     const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null };
                     
-                    ticket.className = `ticket ${ticketData.estado}`;
+                    ticket.className = `ticket dashboard ${ticketData.estado}`;
                     ticket.textContent = i;
                     ticket.title = ticketData.estado === 'vendida' ? 
                         `Vendida por: ${escapeHtml(ticketData.vendedor)}` : 'Disponible';
@@ -1462,10 +1598,10 @@
             }
         }
 
-        // Actualizar ventas por vendedor
+        // Actualizar ventas por vendedor (versión compacta para dashboard)
         function updateSalesBySeller() {
             const container = document.getElementById('salesBySeller');
-            let html = '<h4>Ventas por Vendedor:</h4>';
+            let html = '<h4>📈 Ventas por Vendedor</h4>';
             
             if (sellers.length === 0) {
                 html += '<p>No hay vendedores registrados</p>';
@@ -1478,7 +1614,7 @@
                         <div class="stat-card">
                             <h3>${ventas}</h3>
                             <p>${escapeHtml(seller.nombre)}</p>
-                            <small>${ingresos.toLocaleString()} ingresos</small>
+                            <small>$${ingresos.toLocaleString()}</small>
                         </div>
                     `;
                 });
