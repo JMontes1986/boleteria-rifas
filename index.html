@@ -183,49 +183,86 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid.compact {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
         .stat-card {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            padding: 20px;
+            padding: 15px;
             border-radius: 10px;
             text-align: center;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
+        .stat-card.compact {
+            padding: 10px;
+            border-radius: 8px;
+        }
+
         .stat-card h3 {
-            font-size: 2em;
-            margin-bottom: 10px;
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card.compact h3 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            margin: 0;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .stat-card.compact p {
+            font-size: 0.8em;
         }
 
         .ticket-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-            gap: 5px;
-            margin-top: 20px;
-            max-height: 400px;
+            gap: 8px;
+            margin-top: 15px;
+            max-height: 70vh;
             overflow-y: auto;
-            padding: 10px;
+            padding: 15px;
             border: 2px solid #dee2e6;
             border-radius: 10px;
             background: #f8f9fa;
         }
 
+        .ticket-grid.dashboard {
+            max-height: 75vh;
+            padding: 20px;
+        }
+
         .ticket {
             width: 60px;
-            height: 40px;
+            height: 45px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 5px;
+            border-radius: 6px;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .ticket:hover {
+            transform: scale(1.05);
+            border-color: #007bff;
         }
 
         .ticket.disponible {
@@ -436,7 +473,7 @@
             <button class="tab active" onclick="showTab('admin')">👨‍💼 Administrador</button>
             <button class="tab" onclick="showTab('seller')">🛒 Vendedor</button>
             <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
-            <button class="tab" onclick="showTab('security')">🔒 Seguridad</button>
+            <button class="tab" id="securityTab" onclick="showTab('security')" style="display: none;">🔒 Seguridad</button>
         </div>
 
         <!-- Pestaña Administrador -->
