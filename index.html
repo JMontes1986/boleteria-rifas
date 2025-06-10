@@ -217,54 +217,18 @@
             color: white;
         }
 
-        .ticket.selected {
-            background: #ffc107;
-            color: black;
-            transform: scale(1.1);
-        }
-
-        .sale-section {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
+        .tickets-section {
             margin-top: 20px;
         }
 
-        .selected-tickets {
-            background: #e9ecef;
-            padding: 20px;
-            border-radius: 10px;
-        }
-
-        .selected-tickets h4 {
-            margin-bottom: 15px;
+        .tickets-section h4 {
+            margin-bottom: 10px;
             color: #333;
         }
 
-        .ticket-list {
-            max-height: 200px;
-            overflow-y: auto;
+        .tickets-section p {
             margin-bottom: 15px;
-        }
-
-        .ticket-item {
-            background: white;
-            padding: 10px;
-            margin-bottom: 5px;
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .remove-ticket {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            padding: 5px 10px;
-            cursor: pointer;
-            font-size: 12px;
+            color: #666;
         }
 
         .alert {
@@ -363,10 +327,6 @@
         }
 
         @media (max-width: 768px) {
-            .sale-section {
-                grid-template-columns: 1fr;
-            }
-            
             .stats-grid {
                 grid-template-columns: 1fr;
             }
@@ -467,27 +427,19 @@
                         <p>Boletas Vendidas</p>
                     </div>
                     <div class="stat-card">
-                        <h3 id="selectedCount">0</h3>
-                        <p>Seleccionadas</p>
+                        <h3 id="revenueCount">$0</h3>
+                        <p>Ingresos Totales</p>
                     </div>
                 </div>
 
-                <div class="sale-section">
-                    <div>
-                        <h4>Seleccionar Boletas (Click para cambiar estado)</h4>
-                        <div id="ticketGridLoading" class="loading">
-                            <div class="spinner"></div>
-                            Cargando boletas...
-                        </div>
-                        <div class="ticket-grid" id="ticketGrid" style="display: none;"></div>
+                <div class="tickets-section">
+                    <h4>Boletas (Click para vender/liberar)</h4>
+                    <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Click en cualquier boleta para cambiar su estado</small></p>
+                    <div id="ticketGridLoading" class="loading">
+                        <div class="spinner"></div>
+                        Cargando boletas...
                     </div>
-                    
-                    <div class="selected-tickets">
-                        <h4>Boletas Seleccionadas</h4>
-                        <div class="ticket-list" id="selectedTicketsList"></div>
-                        <button class="btn btn-success" onclick="confirmSale()" id="confirmSaleBtn">Confirmar Venta</button>
-                        <button class="btn btn-danger" onclick="clearSelection()">Limpiar Selección</button>
-                    </div>
+                    <div class="ticket-grid" id="ticketGrid" style="display: none;"></div>
                 </div>
             </div>
         </div>
@@ -534,7 +486,6 @@
         // Variables globales
         let tickets = {};
         let sellers = [];
-        let selectedTickets = new Set();
         let currentSellerData = null;
 
         // Inicializar Supabase
@@ -1107,11 +1058,6 @@
                     newState = 'vendida';
                     newVendedor = currentSellerData.nombre;
                     newFecha = new Date().toISOString();
-                    
-                    if (selectedTickets.has(ticketNumber)) {
-                        selectedTickets.delete(ticketNumber);
-                        updateSelectedTicketsList();
-                    }
                 } else {
                     // Cambiar a disponible
                     newState = 'disponible';
@@ -1369,11 +1315,11 @@
         function updateStats() {
             const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
             const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
-            const selected = selectedTickets.size;
+            const revenue = sold * 1000;
             
             document.getElementById('availableCount').textContent = available;
             document.getElementById('soldCount').textContent = sold;
-            document.getElementById('selectedCount').textContent = selected;
+            document.getElementById('revenueCount').textContent = `${revenue.toLocaleString()}`;
         }
 
         // Actualizar dashboard
@@ -1483,7 +1429,6 @@
                     // Reinicializar datos locales
                     tickets = {};
                     sellers = [];
-                    selectedTickets.clear();
                     currentSellerData = null;
                     
                     // Actualizar UI
@@ -1797,14 +1742,6 @@
         window.addEventListener('error', function(e) {
             console.error('Error global:', e);
             showAlert('Error inesperado en la aplicación', 'danger');
-        });
-
-        // Prevenir pérdida de datos al cerrar
-        window.addEventListener('beforeunload', function(e) {
-            if (selectedTickets.size > 0) {
-                e.preventDefault();
-                e.returnValue = 'Tiene boletas seleccionadas sin confirmar. ¿Está seguro de salir?';
-            }
         });
 
         // Función auxiliar para verificar conexión (llamada por setInterval)
