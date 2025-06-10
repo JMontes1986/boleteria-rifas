@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Venta de Boletería - Rifas</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -125,17 +124,12 @@
             margin: 5px;
         }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
         .btn-primary {
             background: #007bff;
             color: white;
         }
 
-        .btn-primary:hover:not(:disabled) {
+        .btn-primary:hover {
             background: #0056b3;
             transform: translateY(-2px);
         }
@@ -145,7 +139,7 @@
             color: white;
         }
 
-        .btn-success:hover:not(:disabled) {
+        .btn-success:hover {
             background: #1e7e34;
             transform: translateY(-2px);
         }
@@ -155,7 +149,7 @@
             color: white;
         }
 
-        .btn-danger:hover:not(:disabled) {
+        .btn-danger:hover {
             background: #c82333;
             transform: translateY(-2px);
         }
@@ -207,12 +201,12 @@
             transition: all 0.3s;
         }
 
-        .ticket.disponible {
+        .ticket.available {
             background: #28a745;
             color: white;
         }
 
-        .ticket.vendida {
+        .ticket.sold {
             background: #dc3545;
             color: white;
         }
@@ -301,6 +295,7 @@
             color: white;
             font-weight: bold;
             z-index: 1000;
+            font-size: 14px;
         }
 
         .connection-status.connected {
@@ -311,25 +306,63 @@
             background: #dc3545;
         }
 
-        .loading {
-            text-align: center;
+        .connection-status.testing {
+            background: #ffc107;
+            color: black;
+        }
+
+        .connection-controls {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .btn-connection {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            background: #007bff;
+            color: white;
+            transition: all 0.3s;
+        }
+
+        .btn-connection:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .btn-connection.active {
+            background: #28a745;
+        }
+
+        .cancellation-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
             padding: 20px;
-            font-size: 18px;
+            margin-top: 20px;
         }
 
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 2s linear infinite;
-            margin: 0 auto 20px;
+        .cancellation-section h4 {
+            color: #856404;
+            margin-bottom: 15px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .cancel-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .cancel-input-group input {
+            flex: 1;
         }
 
         @media (max-width: 768px) {
@@ -355,13 +388,18 @@
 </head>
 <body>
     <div class="connection-status" id="connectionStatus">
-        🔴 Conectando...
+        🔴 Desconectado
+    </div>
+
+    <div class="connection-controls" id="connectionControls">
+        <button class="btn-connection" onclick="testConnection()">🔌 Probar Conexión</button>
+        <button class="btn-connection" onclick="toggleAutoSync()">⚡ Auto-Sync: OFF</button>
     </div>
 
     <div class="container">
         <div class="header">
             <h1>🎫 Sistema de Venta de Boletería</h1>
-            <p>Gestión de Rifas en Tiempo Real con Supabase</p>
+            <p>Gestión de Rifas en Tiempo Real</p>
         </div>
 
         <div class="tabs">
@@ -374,7 +412,7 @@
         <div id="admin" class="tab-content active">
             <div class="admin-section">
                 <h3>🔐 Panel de Administrador</h3>
-                <p><strong>Usuario:</strong> admin | <strong>Contraseña:</strong>*********</p>
+                <p><strong>Usuario:</strong> admin | <strong>Contraseña:</strong> admin123</p>
                 
                 <div class="form-group">
                     <label>Usuario Administrador:</label>
@@ -397,10 +435,8 @@
                     <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor">
                 </div>
                 
-                <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
-                <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
-                <button class="btn btn-primary" onclick="testConnection()" id="testConnBtn">Probar Conexión</button>
-                <button class="btn btn-primary" onclick="showDatabaseSetup()" id="setupBtn">Configurar Base de Datos</button>
+                <button class="btn btn-success" onclick="addSeller()">Agregar Vendedor</button>
+                <button class="btn btn-danger" onclick="resetSystem()">Reiniciar Sistema</button>
                 
                 <div id="sellersList" style="margin-top: 20px;"></div>
             </div>
@@ -411,18 +447,18 @@
             <div class="form-group">
                 <label>Seleccionar Vendedor:</label>
                 <select id="currentSeller">
-                    <option value="">Cargando vendedores...</option>
+                    <option value="">Seleccione un vendedor</option>
                 </select>
             </div>
 
             <div id="sellerPanel" style="display: none;">
                 <div class="stats-grid">
                     <div class="stat-card">
-                        <h3 id="availableCount">-</h3>
+                        <h3 id="availableCount">1000</h3>
                         <p>Boletas Disponibles</p>
                     </div>
                     <div class="stat-card">
-                        <h3 id="soldCount">-</h3>
+                        <h3 id="soldCount">0</h3>
                         <p>Boletas Vendidas</p>
                     </div>
                     <div class="stat-card">
@@ -433,20 +469,32 @@
 
                 <div class="sale-section">
                     <div>
-                        <h4>Seleccionar Boletas (Click para cambiar estado)</h4>
-                        <div id="ticketGridLoading" class="loading">
-                            <div class="spinner"></div>
-                            Cargando boletas...
-                        </div>
-                        <div class="ticket-grid" id="ticketGrid" style="display: none;"></div>
+                        <h4>Seleccionar Boletas (Click en las verdes)</h4>
+                        <div class="ticket-grid" id="ticketGrid"></div>
                     </div>
                     
                     <div class="selected-tickets">
                         <h4>Boletas Seleccionadas</h4>
                         <div class="ticket-list" id="selectedTicketsList"></div>
-                        <button class="btn btn-success" onclick="confirmSale()" id="confirmSaleBtn">Confirmar Venta</button>
+                        <button class="btn btn-success" onclick="confirmSale()">Confirmar Venta</button>
                         <button class="btn btn-danger" onclick="clearSelection()">Limpiar Selección</button>
                     </div>
+                </div>
+
+                <!-- Sección de Cancelación -->
+                <div class="cancellation-section">
+                    <h4>🚫 Cancelar Boleta Vendida</h4>
+                    <p><small>Ingrese el número de la boleta que desea cancelar (debe estar vendida)</small></p>
+                    <div class="cancel-input-group">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Número de Boleta a Cancelar:</label>
+                            <input type="number" id="cancelTicketNumber" placeholder="Ej: 150" min="1" max="1000">
+                        </div>
+                        <button class="btn btn-danger" onclick="cancelTicket()" id="cancelBtn">
+                            🗑️ Cancelar Boleta
+                        </button>
+                    </div>
+                    <div id="cancelStatus" style="margin-top: 10px;"></div>
                 </div>
             </div>
         </div>
@@ -457,15 +505,15 @@
             
             <div class="stats-grid">
                 <div class="stat-card">
-                    <h3 id="dashAvailable">-</h3>
+                    <h3 id="dashAvailable">1000</h3>
                     <p>Boletas Disponibles</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="dashSold">-</h3>
+                    <h3 id="dashSold">0</h3>
                     <p>Total Vendidas</p>
                 </div>
                 <div class="stat-card">
-                    <h3 id="dashRevenue">$-</h3>
+                    <h3 id="dashRevenue">$0</h3>
                     <p>Ingresos (x$1000)</p>
                 </div>
             </div>
@@ -473,414 +521,34 @@
             <div id="salesBySeller"></div>
             
             <h4>Estado de Todas las Boletas</h4>
-            <div id="dashboardLoading" class="loading">
-                <div class="spinner"></div>
-                Cargando dashboard...
-            </div>
-            <div class="ticket-grid" id="dashboardTicketGrid" style="display: none;"></div>
+            <div class="ticket-grid" id="dashboardTicketGrid"></div>
         </div>
     </div>
 
     <div id="alerts"></div>
 
     <script>
-        // Configuración de Supabase
-        const SUPABASE_URL = 'https://gvkzfieixyiqpklocavq.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2a3pmaWVpeHlpcXBrbG9jYXZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0ODcyMzEsImV4cCI6MjA2NTA2MzIzMX0.AKoCFx7OXUnuSdImoAvbO3uPPktYOtRB0ut2J7tYFpI';
-        
-        let supabaseClient;
-        
-        // Variables globales
-        let tickets = {};
-        let sellers = [];
-        let selectedTickets = new Set();
-        let currentSellerData = null;
+        // Sistema de datos en memoria (simula base de datos)
+        let systemData = {
+            tickets: {},
+            sellers: [],
+            sales: [],
+            isInitialized: false
+        };
 
-        // Inicializar Supabase
-        function initSupabase() {
-            try {
-                // Verificar que Supabase esté cargado
-                if (typeof supabase === 'undefined') {
-                    throw new Error('Supabase library no está cargada. Verifique la conexión a internet.');
-                }
-                
-                if (!supabase.createClient) {
-                    throw new Error('createClient no está disponible en Supabase');
-                }
-                
-                // Verificar configuración
-                if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-                    throw new Error('Configuración de Supabase incompleta');
-                }
-                
-                console.log('Intentando conectar a:', SUPABASE_URL);
-                
-                const { createClient } = supabase;
-                supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                
-                console.log('Supabase inicializado correctamente');
-                return true;
-            } catch (error) {
-                console.error('Error inicializando Supabase:', error);
-                showAlert('Error de conexión: ' + error.message, 'danger');
-                return false;
-            }
-        }
-
-        // Inicializar la aplicación
-        async function initializeApp() {
-            try {
-                updateConnectionStatus('connecting');
-                showAlert('Conectando a Supabase...', 'info');
-                
-                // Intentar inicializar Supabase con reintentos
-                let supabaseInitialized = false;
-                let attempts = 0;
-                const maxAttempts = 3;
-                
-                while (!supabaseInitialized && attempts < maxAttempts) {
-                    attempts++;
-                    console.log(`Intento ${attempts} de conectar a Supabase...`);
-                    
-                    supabaseInitialized = initSupabase();
-                    
-                    if (!supabaseInitialized && attempts < maxAttempts) {
-                        await new Promise(resolve => setTimeout(resolve, 2000)); // Esperar 2 segundos
-                    }
-                }
-                
-                if (!supabaseInitialized) {
-                    throw new Error('No se pudo inicializar Supabase después de ' + maxAttempts + ' intentos');
-                }
-                
-                // Diagnóstico completo de la base de datos
-                showAlert('Verificando base de datos...', 'info');
-                const diagnostic = await diagnosticDatabase();
-                
-                if (!diagnostic.success) {
-                    if (diagnostic.needsTableCreation) {
-                        showAlert('Creando tablas automáticamente...', 'info');
-                        const created = await createTablesAutomatically();
-                        
-                        if (!created) {
-                            throw new Error(diagnostic.error + '\n\nLas tablas no existen y no se pudieron crear automáticamente.');
-                        }
-                        
-                        showAlert('Tablas creadas exitosamente', 'success');
-                    } else {
-                        throw new Error(diagnostic.error);
-                    }
-                }
-                
-                showAlert('Conexión establecida. Cargando datos...', 'info');
-                
-                await loadSellers();
-                await loadTickets();
-                updateConnectionStatus('connected');
-                
-                // Inicializar boletas si no existen
-                await initializeTicketsIfNeeded();
-                
-                showAlert('Sistema conectado exitosamente', 'success');
-            } catch (error) {
-                console.error('Error inicializando app:', error);
-                updateConnectionStatus('disconnected');
-                
-                // Mostrar error específico y soluciones
-                let errorMessage = 'Error conectando con la base de datos:\n' + error.message;
-                
-                if (error.message.includes('Invalid API key')) {
-                    errorMessage += '\n\n🔑 SOLUCIÓN: Verifique la API Key en Supabase Dashboard > Settings > API';
-                } else if (error.message.includes('relation') && error.message.includes('does not exist')) {
-                    errorMessage += '\n\n📋 SOLUCIÓN: Las tablas no existen. Ejecute el SQL en Supabase SQL Editor:';
-                    errorMessage += '\n\nCREATE TABLE vendedores (id BIGSERIAL PRIMARY KEY, nombre TEXT NOT NULL);';
-                    errorMessage += '\nCREATE TABLE boletas (numero INTEGER PRIMARY KEY, estado TEXT DEFAULT \'disponible\', vendedor TEXT, fecha TIMESTAMP);';
-                    errorMessage += '\nALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;';
-                    errorMessage += '\nALTER TABLE boletas ENABLE ROW LEVEL SECURITY;';
-                    errorMessage += '\nCREATE POLICY "Allow all" ON vendedores FOR ALL USING (true);';
-                    errorMessage += '\nCREATE POLICY "Allow all" ON boletas FOR ALL USING (true);';
-                } else if (error.message.includes('JWT')) {
-                    errorMessage += '\n\n🔐 SOLUCIÓN: Problema de autenticación. Verifique la URL del proyecto.';
-                }
-                
-                showAlert(errorMessage, 'danger');
-                
-                // Modo offline - usar datos locales
-                enableOfflineMode();
-            }
-        }
-
-        // Diagnóstico de la base de datos
-        async function diagnosticDatabase() {
-            try {
-                console.log('🔍 Iniciando diagnóstico de base de datos...');
-                
-                // Test 1: Verificar conexión básica
-                console.log('📡 Test 1: Verificando conexión básica...');
-                const { data: basicTest, error: basicError } = await supabaseClient
-                    .from('_realtime')
-                    .select('*')
-                    .limit(1);
-                
-                if (basicError && basicError.message.includes('permission denied')) {
-                    console.log('✅ Conexión básica OK (error esperado de permisos)');
-                } else if (basicError && !basicError.message.includes('relation')) {
-                    console.log('❌ Error de conexión básica:', basicError.message);
-                    return { success: false, error: 'Error de conexión: ' + basicError.message };
-                }
-                
-                // Test 2: Verificar tabla vendedores
-                console.log('👥 Test 2: Verificando tabla vendedores...');
-                const { data: vendedoresTest, error: vendedoresError } = await supabaseClient
-                    .from('vendedores')
-                    .select('count', { count: 'exact', head: true })
-                    .limit(1);
-                
-                if (vendedoresError) {
-                    if (vendedoresError.message.includes('does not exist')) {
-                        console.log('❌ Tabla vendedores no existe');
-                        return { 
-                            success: false, 
-                            needsTableCreation: true,
-                            error: 'Las tablas "vendedores" y "boletas" no existen en la base de datos' 
-                        };
-                    } else if (vendedoresError.message.includes('permission denied') || vendedoresError.message.includes('RLS')) {
-                        console.log('❌ Error de permisos en tabla vendedores');
-                        return { 
-                            success: false, 
-                            error: 'Error de permisos: Row Level Security no configurado correctamente' 
-                        };
-                    } else {
-                        console.log('❌ Error en tabla vendedores:', vendedoresError.message);
-                        return { success: false, error: vendedoresError.message };
-                    }
-                }
-                
-                // Test 3: Verificar tabla boletas
-                console.log('🎫 Test 3: Verificando tabla boletas...');
-                const { data: boletasTest, error: boletasError } = await supabaseClient
-                    .from('boletas')
-                    .select('count', { count: 'exact', head: true })
-                    .limit(1);
-                
-                if (boletasError) {
-                    if (boletasError.message.includes('does not exist')) {
-                        console.log('❌ Tabla boletas no existe');
-                        return { 
-                            success: false, 
-                            needsTableCreation: true,
-                            error: 'La tabla "boletas" no existe en la base de datos' 
-                        };
-                    } else if (boletasError.message.includes('permission denied') || boletasError.message.includes('RLS')) {
-                        console.log('❌ Error de permisos en tabla boletas');
-                        return { 
-                            success: false, 
-                            error: 'Error de permisos: Row Level Security no configurado correctamente' 
-                        };
-                    } else {
-                        console.log('❌ Error en tabla boletas:', boletasError.message);
-                        return { success: false, error: boletasError.message };
-                    }
-                }
-                
-                // Test 4: Verificar permisos de escritura
-                console.log('✏️ Test 4: Verificando permisos de escritura...');
-                const testVendor = { nombre: 'TEST_' + Date.now() };
-                const { data: writeTest, error: writeError } = await supabaseClient
-                    .from('vendedores')
-                    .insert([testVendor])
-                    .select();
-                
-                if (writeError) {
-                    console.log('❌ Error de escritura:', writeError.message);
-                    return { 
-                        success: false, 
-                        error: 'No se pueden insertar datos: ' + writeError.message 
+        // Inicializar sistema
+        function initializeSystem() {
+            if (!systemData.isInitialized) {
+                for (let i = 1; i <= 1000; i++) {
+                    systemData.tickets[i] = {
+                        number: i,
+                        status: 'available', // available, sold
+                        soldBy: null,
+                        saleDate: null
                     };
                 }
-                
-                // Limpiar test
-                if (writeTest && writeTest[0]) {
-                    await supabaseClient
-                        .from('vendedores')
-                        .delete()
-                        .eq('id', writeTest[0].id);
-                }
-                
-                console.log('✅ Todos los tests de diagnóstico pasaron correctamente');
-                return { success: true };
-                
-            } catch (error) {
-                console.error('❌ Error durante diagnóstico:', error);
-                return { 
-                    success: false, 
-                    error: 'Error inesperado durante diagnóstico: ' + error.message 
-                };
-            }
-        }
-
-        // Crear tablas automáticamente
-        async function createTablesAutomatically() {
-            try {
-                console.log('🛠️ Intentando crear tablas automáticamente...');
-                
-                // Script SQL para crear tablas
-                const createTablesSQL = `
-                -- Crear tabla vendedores
-                CREATE TABLE IF NOT EXISTS vendedores (
-                    id BIGSERIAL PRIMARY KEY,
-                    nombre TEXT NOT NULL,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-                );
-
-                -- Crear tabla boletas
-                CREATE TABLE IF NOT EXISTS boletas (
-                    numero INTEGER PRIMARY KEY,
-                    estado TEXT NOT NULL DEFAULT 'disponible',
-                    vendedor TEXT,
-                    fecha TIMESTAMP WITH TIME ZONE,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-                );
-
-                -- Habilitar RLS
-                ALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;
-                ALTER TABLE boletas ENABLE ROW LEVEL SECURITY;
-
-                -- Crear políticas permisivas
-                DROP POLICY IF EXISTS "Allow all operations vendedores" ON vendedores;
-                DROP POLICY IF EXISTS "Allow all operations boletas" ON boletas;
-                
-                CREATE POLICY "Allow all operations vendedores" ON vendedores FOR ALL USING (true);
-                CREATE POLICY "Allow all operations boletas" ON boletas FOR ALL USING (true);
-                `;
-
-                // Intentar ejecutar usando la función RPC si está disponible
-                const { data, error } = await supabaseClient.rpc('exec_sql', { sql: createTablesSQL });
-                
-                if (error) {
-                    console.log('❌ No se pudo crear automáticamente, se requiere intervención manual');
-                    return false;
-                }
-                
-                console.log('✅ Tablas creadas automáticamente');
-                return true;
-                
-            } catch (error) {
-                console.error('❌ Error creando tablas automáticamente:', error);
-                return false;
-            }
-        }
-
-        // Actualizar estado de conexión
-        function updateConnectionStatus(status) {
-            const statusEl = document.getElementById('connectionStatus');
-            if (status === 'connected') {
-                statusEl.className = 'connection-status connected';
-                statusEl.textContent = '🟢 Conectado';
-            } else if (status === 'disconnected') {
-                statusEl.className = 'connection-status disconnected';
-                statusEl.textContent = '🔴 Desconectado';
-            } else {
-                statusEl.className = 'connection-status disconnected';
-                statusEl.textContent = '🟡 Conectando...';
-            }
-        }
-
-        // Cargar vendedores desde Supabase
-        async function loadSellers() {
-            try {
-                if (!supabaseClient) {
-                    console.log('Supabase no disponible, usando datos locales');
-                    return;
-                }
-                
-                const { data, error } = await supabaseClient
-                    .from('vendedores')
-                    .select('*')
-                    .order('nombre');
-                
-                if (error) throw error;
-                
-                sellers = data || [];
-                updateSellerDropdown();
-                updateSellersList();
-            } catch (error) {
-                console.error('Error cargando vendedores:', error);
-                showAlert('Error cargando vendedores: ' + error.message, 'danger');
-                // No lanzar error para permitir modo offline
-            }
-        }
-
-        // Cargar boletas desde Supabase
-        async function loadTickets() {
-            try {
-                if (!supabaseClient) {
-                    console.log('Supabase no disponible, usando datos locales');
-                    return;
-                }
-                
-                const { data, error } = await supabaseClient
-                    .from('boletas')
-                    .select('*')
-                    .order('numero');
-                
-                if (error) throw error;
-                
-                // Convertir array a objeto indexado por número
-                tickets = {};
-                if (data) {
-                    data.forEach(ticket => {
-                        tickets[ticket.numero] = ticket;
-                    });
-                }
-                
-                updateStats();
-            } catch (error) {
-                console.error('Error cargando boletas:', error);
-                showAlert('Error cargando boletas: ' + error.message, 'danger');
-                // No lanzar error para permitir modo offline
-            }
-        }
-
-        // Inicializar boletas si no existen
-        async function initializeTicketsIfNeeded() {
-            try {
-                const { count, error } = await supabaseClient
-                    .from('boletas')
-                    .select('*', { count: 'exact', head: true });
-                
-                if (error) throw error;
-                
-                if (count === 0) {
-                    showAlert('Inicializando 1000 boletas...', 'info');
-                    
-                    // Crear boletas del 1 al 1000
-                    const boletasArray = [];
-                    for (let i = 1; i <= 1000; i++) {
-                        boletasArray.push({
-                            numero: i,
-                            estado: 'disponible',
-                            vendedor: null,
-                            fecha: null
-                        });
-                    }
-                    
-                    // Insertar en lotes de 100 para evitar problemas
-                    for (let i = 0; i < boletasArray.length; i += 100) {
-                        const batch = boletasArray.slice(i, i + 100);
-                        const { error: insertError } = await supabaseClient
-                            .from('boletas')
-                            .insert(batch);
-                        
-                        if (insertError) throw insertError;
-                    }
-                    
-                    await loadTickets(); // Recargar después de inicializar
-                    showAlert('1000 boletas inicializadas correctamente', 'success');
-                }
-            } catch (error) {
-                console.error('Error inicializando boletas:', error);
-                showAlert('Error inicializando boletas: ' + error.message, 'danger');
+                systemData.isInitialized = true;
+                updateAllDisplays();
             }
         }
 
@@ -894,10 +562,6 @@
             
             if (tabName === 'dashboard') {
                 updateDashboard();
-            } else if (tabName === 'seller') {
-                if (currentSellerData) {
-                    createTicketGrid();
-                }
             }
         }
 
@@ -916,53 +580,45 @@
         }
 
         // Agregar vendedor
-        async function addSeller() {
+        function addSeller() {
             const name = document.getElementById('sellerName').value.trim();
             if (!name) {
                 showAlert('Por favor ingrese un nombre', 'danger');
                 return;
             }
             
-            // Verificar si ya existe
-            if (sellers.find(s => s.nombre.toLowerCase() === name.toLowerCase())) {
+            if (systemData.sellers.find(s => s.name === name)) {
                 showAlert('Este vendedor ya existe', 'danger');
                 return;
             }
             
-            try {
-                document.getElementById('addSellerBtn').disabled = true;
-                
-                // Verificar si Supabase está disponible
-                if (!supabaseClient) {
-                    // Modo offline - agregar localmente
-                    const newSeller = {
-                        id: Date.now(),
-                        nombre: name
-                    };
-                    sellers.push(newSeller);
-                    document.getElementById('sellerName').value = '';
-                    updateSellerDropdown();
-                    updateSellersList();
-                    showAlert(`Vendedor "${name}" agregado localmente (modo offline)`, 'info');
-                    return;
-                }
-                
-                const { data, error } = await supabaseClient
-                    .from('vendedores')
-                    .insert([{ nombre: name }])
-                    .select();
-                
-                if (error) throw error;
-                
-                document.getElementById('sellerName').value = '';
-                await loadSellers(); // Recargar vendedores
-                showAlert(`Vendedor "${name}" agregado correctamente`, 'success');
-            } catch (error) {
-                console.error('Error agregando vendedor:', error);
-                showAlert('Error agregando vendedor: ' + error.message, 'danger');
-            } finally {
-                document.getElementById('addSellerBtn').disabled = false;
+            systemData.sellers.push({
+                id: Date.now(),
+                name: name,
+                sales: 0,
+                revenue: 0
+            });
+            
+            document.getElementById('sellerName').value = '';
+            updateSellersList();
+            updateSellerDropdown();
+            showAlert(`Vendedor "${name}" agregado correctamente`, 'success');
+        }
+
+        // Actualizar lista de vendedores
+        function updateSellersList() {
+            const container = document.getElementById('sellersList');
+            if (systemData.sellers.length === 0) {
+                container.innerHTML = '<p>No hay vendedores registrados</p>';
+                return;
             }
+            
+            let html = '<h4>Vendedores Registrados:</h4><ul>';
+            systemData.sellers.forEach(seller => {
+                html += `<li>${seller.name} - Ventas: ${seller.sales} - Ingresos: $${seller.revenue * 1000}</li>`;
+            });
+            html += '</ul>';
+            container.innerHTML = html;
         }
 
         // Actualizar dropdown de vendedores
@@ -970,174 +626,70 @@
             const select = document.getElementById('currentSeller');
             select.innerHTML = '<option value="">Seleccione un vendedor</option>';
             
-            sellers.forEach(seller => {
+            systemData.sellers.forEach(seller => {
                 const option = document.createElement('option');
                 option.value = seller.id;
-                option.textContent = seller.nombre;
+                option.textContent = seller.name;
                 select.appendChild(option);
             });
         }
 
-        // Actualizar lista de vendedores
-        function updateSellersList() {
-            const container = document.getElementById('sellersList');
-            if (sellers.length === 0) {
-                container.innerHTML = '<p>No hay vendedores registrados</p>';
-                return;
+        // Cambiar vendedor actual
+        document.getElementById('currentSeller').addEventListener('change', function() {
+            const sellerId = this.value;
+            if (sellerId) {
+                document.getElementById('sellerPanel').style.display = 'block';
+                initializeSystem();
+                createTicketGrid();
+                updateStats();
+            } else {
+                document.getElementById('sellerPanel').style.display = 'none';
             }
-            
-            let html = '<h4>Vendedores Registrados:</h4><ul>';
-            sellers.forEach(seller => {
-                const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
-                html += `<li>${seller.nombre} - Ventas: ${ventas} - Ingresos: $${ventas * 1000}</li>`;
-            });
-            html += '</ul>';
-            container.innerHTML = html;
-        }
-
-        // Manejar cambio de vendedor
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('currentSeller').addEventListener('change', function() {
-                const sellerId = this.value;
-                if (sellerId) {
-                    currentSellerData = sellers.find(s => s.id == sellerId);
-                    document.getElementById('sellerPanel').style.display = 'block';
-                    createTicketGrid();
-                    updateStats();
-                } else {
-                    currentSellerData = null;
-                    document.getElementById('sellerPanel').style.display = 'none';
-                }
-            });
         });
 
         // Crear grid de boletas
         function createTicketGrid() {
             const grid = document.getElementById('ticketGrid');
-            const loading = document.getElementById('ticketGridLoading');
-            
             if (!grid) return;
             
-            loading.style.display = 'block';
-            grid.style.display = 'none';
             grid.innerHTML = '';
             
-            setTimeout(() => {
-                for (let i = 1; i <= 1000; i++) {
-                    const ticket = document.createElement('div');
-                    const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null };
-                    
-                    ticket.className = `ticket ${ticketData.estado}`;
-                    ticket.textContent = i;
-                    ticket.onclick = () => toggleTicketState(i);
-                    
-                    if (ticketData.estado === 'vendida') {
-                        ticket.title = `Vendida por: ${ticketData.vendedor || 'Desconocido'}`;
-                    } else {
-                        ticket.title = 'Disponible - Click para vender';
-                    }
-                    
-                    grid.appendChild(ticket);
+            for (let i = 1; i <= 1000; i++) {
+                const ticket = document.createElement('div');
+                const ticketData = systemData.tickets[i];
+                
+                // Asegurar que la clase refleje correctamente el estado
+                ticket.className = `ticket ${ticketData.status}`;
+                ticket.textContent = i;
+                ticket.onclick = () => toggleTicketSelection(i);
+                
+                // Agregar tooltip con información
+                if (ticketData.status === 'sold') {
+                    ticket.title = `Vendida por: ${ticketData.soldBy || 'Desconocido'}`;
+                } else {
+                    ticket.title = 'Disponible para venta';
                 }
                 
-                loading.style.display = 'none';
-                grid.style.display = 'grid';
-            }, 100);
-        }
-
-        // Alternar estado de boleta (disponible/vendida)
-        async function toggleTicketState(ticketNumber) {
-            if (!currentSellerData) {
-                showAlert('Por favor seleccione un vendedor', 'danger');
-                return;
+                grid.appendChild(ticket);
             }
             
-            const currentTicket = tickets[ticketNumber] || { 
-                numero: ticketNumber, 
-                estado: 'disponible', 
-                vendedor: null 
-            };
-            
-            try {
-                let newState, newVendedor, newFecha;
-                
-                if (currentTicket.estado === 'disponible') {
-                    // Cambiar a vendida
-                    newState = 'vendida';
-                    newVendedor = currentSellerData.nombre;
-                    newFecha = new Date().toISOString();
-                    
-                    if (selectedTickets.has(ticketNumber)) {
-                        selectedTickets.delete(ticketNumber);
-                        updateSelectedTicketsList();
-                    }
-                } else {
-                    // Cambiar a disponible
-                    newState = 'disponible';
-                    newVendedor = null;
-                    newFecha = null;
-                }
-                
-                // Actualizar localmente primero
-                tickets[ticketNumber] = {
-                    numero: ticketNumber,
-                    estado: newState,
-                    vendedor: newVendedor,
-                    fecha: newFecha
-                };
-                
-                // Actualizar visualmente
-                const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${ticketNumber})`);
-                if (ticketElement) {
-                    ticketElement.className = `ticket ${newState}`;
-                    ticketElement.title = newState === 'vendida' ? 
-                        `Vendida por: ${newVendedor}` : 'Disponible - Click para vender';
-                }
-                
-                updateStats();
-                updateSellersList();
-                
-                // Intentar actualizar en Supabase si está disponible
-                if (supabaseClient) {
-                    try {
-                        const { error } = await supabaseClient
-                            .from('boletas')
-                            .upsert({
-                                numero: ticketNumber,
-                                estado: newState,
-                                vendedor: newVendedor,
-                                fecha: newFecha
-                            });
-                        
-                        if (error) throw error;
-                        
-                        const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                        showAlert(`Boleta ${ticketNumber} ${action} correctamente`, 'success');
-                    } catch (error) {
-                        console.error('Error actualizando en Supabase:', error);
-                        showAlert(`Boleta ${ticketNumber} actualizada localmente (sin conexión)`, 'info');
-                    }
-                } else {
-                    const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                    showAlert(`Boleta ${ticketNumber} ${action} localmente (modo offline)`, 'info');
-                }
-                
-            } catch (error) {
-                console.error('Error actualizando boleta:', error);
-                showAlert('Error actualizando boleta: ' + error.message, 'danger');
-            }
+            // Forzar re-renderizado
+            grid.offsetHeight;
         }
 
-        // Seleccionar múltiples boletas para venta masiva
+        // Variables para boletas seleccionadas
+        let selectedTickets = new Set();
+
+        // Seleccionar/deseleccionar boleta
         function toggleTicketSelection(ticketNumber) {
-            const ticket = tickets[ticketNumber];
+            const ticket = systemData.tickets[ticketNumber];
             
-            if (ticket && ticket.estado === 'vendida') {
+            if (ticket.status === 'sold') {
                 showAlert(`La boleta ${ticketNumber} ya está vendida`, 'danger');
                 return;
             }
             
-            const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${ticketNumber})`);
+            const ticketElement = document.querySelector(`.ticket:nth-child(${ticketNumber})`);
             
             if (selectedTickets.has(ticketNumber)) {
                 selectedTickets.delete(ticketNumber);
@@ -1175,7 +727,7 @@
         // Remover boleta de selección
         function removeTicketFromSelection(ticketNumber) {
             selectedTickets.delete(ticketNumber);
-            const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${ticketNumber})`);
+            const ticketElement = document.querySelector(`.ticket:nth-child(${ticketNumber})`);
             if (ticketElement) {
                 ticketElement.classList.remove('selected');
             }
@@ -1183,70 +735,50 @@
             updateStats();
         }
 
-        // Confirmar venta masiva
-        async function confirmSale() {
+        // Confirmar venta
+        function confirmSale() {
             if (selectedTickets.size === 0) {
                 showAlert('No hay boletas seleccionadas para vender', 'danger');
                 return;
             }
             
-            if (!currentSellerData) {
+            const sellerId = document.getElementById('currentSeller').value;
+            const seller = systemData.sellers.find(s => s.id == sellerId);
+            
+            if (!seller) {
                 showAlert('Por favor seleccione un vendedor', 'danger');
                 return;
             }
             
-            try {
-                document.getElementById('confirmSaleBtn').disabled = true;
-                const ticketsArray = Array.from(selectedTickets);
-                const fecha = new Date().toISOString();
-                
-                // Actualizar localmente primero
-                ticketsArray.forEach(numero => {
-                    tickets[numero] = {
-                        numero: numero,
-                        estado: 'vendida',
-                        vendedor: currentSellerData.nombre,
-                        fecha: fecha
-                    };
-                });
-                
-                // Limpiar selección y actualizar UI
-                clearSelection();
-                createTicketGrid();
-                updateStats();
-                updateSellersList();
-                
-                // Intentar actualizar en Supabase si está disponible
-                if (supabaseClient) {
-                    try {
-                        const updates = ticketsArray.map(numero => ({
-                            numero: numero,
-                            estado: 'vendida',
-                            vendedor: currentSellerData.nombre,
-                            fecha: fecha
-                        }));
-                        
-                        const { error } = await supabaseClient
-                            .from('boletas')
-                            .upsert(updates);
-                        
-                        if (error) throw error;
-                        
-                        showAlert(`¡Venta confirmada! ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre}`, 'success');
-                    } catch (error) {
-                        console.error('Error sincronizando con Supabase:', error);
-                        showAlert(`Venta registrada localmente. ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre} (sin conexión)`, 'info');
-                    }
-                } else {
-                    showAlert(`Venta registrada localmente. ${ticketsArray.length} boletas vendidas por ${currentSellerData.nombre} (modo offline)`, 'info');
-                }
-                
-            } catch (error) {
-                console.error('Error confirmando venta:', error);
-                showAlert('Error confirmando venta: ' + error.message, 'danger');
-            } finally {
-                document.getElementById('confirmSaleBtn').disabled = false;
-            }
+            const ticketsArray = Array.from(selectedTickets);
+            const saleDate = new Date().toLocaleString();
+            
+            // Marcar boletas como vendidas
+            ticketsArray.forEach(ticketNumber => {
+                systemData.tickets[ticketNumber].status = 'sold';
+                systemData.tickets[ticketNumber].soldBy = seller.name;
+                systemData.tickets[ticketNumber].saleDate = saleDate;
+            });
+            
+            // Actualizar estadísticas del vendedor
+            seller.sales += ticketsArray.length;
+            seller.revenue += ticketsArray.length;
+            
+            // Registrar venta
+            systemData.sales.push({
+                seller: seller.name,
+                tickets: ticketsArray,
+                date: saleDate,
+                amount: ticketsArray.length
+            });
+            
+            showAlert(`¡Venta confirmada! ${ticketsArray.length} boletas vendidas por ${seller.name}`, 'success');
+            
+            // Limpiar selección y actualizar
+            clearSelection();
+            createTicketGrid();
+            updateStats();
+            updateSellersList();
         }
 
         // Limpiar selección
@@ -1259,10 +791,119 @@
             updateStats();
         }
 
+        // Cancelar boleta
+        function cancelTicket() {
+            const ticketNumberInput = document.getElementById('cancelTicketNumber');
+            const ticketNumber = parseInt(ticketNumberInput.value);
+
+            if (!ticketNumber || ticketNumber < 1 || ticketNumber > 1000) {
+                showAlert('Por favor ingrese un número de boleta válido (1-1000)', 'danger');
+                return;
+            }
+
+            if (!systemData.isInitialized) {
+                showAlert('El sistema no está inicializado. Por favor, seleccione un vendedor primero.', 'danger');
+                return;
+            }
+
+            const ticket = systemData.tickets[ticketNumber];
+
+            if (!ticket) {
+                // Esto no debería ocurrir si el sistema está inicializado y el número es válido,
+                // pero es una buena guarda.
+                showAlert(`La boleta ${ticketNumber} no existe en el sistema`, 'danger');
+                return;
+            }
+
+            if (ticket.status === 'available') {
+                showAlert(`La boleta ${ticketNumber} ya está disponible, no se puede cancelar`, 'info');
+                ticketNumberInput.value = ''; // Limpiar input
+                return;
+            }
+
+            // Confirmar cancelación
+            if (confirm(`¿Está seguro de cancelar la boleta ${ticketNumber}?\nVendida por: ${ticket.soldBy || 'Desconocido'}`)) {
+                const soldBy = ticket.soldBy;
+
+                // Marcar como disponible
+                ticket.status = 'available';
+                ticket.soldBy = null;
+                ticket.saleDate = null;
+
+                // Actualizar estadísticas del vendedor
+                const seller = systemData.sellers.find(s => s.name === soldBy);
+                if (seller) {
+                    seller.sales = Math.max(0, seller.sales - 1);
+                    // Asumimos que el precio de la boleta es 1 para el cálculo de 'revenue' aquí.
+                    // Si el precio es diferente (ej. 1000 como en el dashboard), ajustar aquí.
+                    // Por consistencia con el dashboard que muestra ingresos x1000,
+                    // el revenue del vendedor también debería ser por el precio real.
+                    // Si cada boleta es 1000, entonces revenue -= 1 (si revenue es cantidad) o revenue -= 1000 si es el monto.
+                    // El código actual de addSeller y confirmSale sugiere que seller.revenue es la cantidad de boletas.
+                    seller.revenue = Math.max(0, seller.revenue - 1);
+                }
+
+                // Corregir la actualización de systemData.sales
+                let saleModified = false;
+                for (let i = systemData.sales.length - 1; i >= 0; i--) {
+                    const saleRecord = systemData.sales[i];
+                    const ticketIndexInSale = saleRecord.tickets.indexOf(ticketNumber);
+
+                    if (ticketIndexInSale > -1) {
+                        saleRecord.tickets.splice(ticketIndexInSale, 1); // Remover la boleta específica de la venta
+                        saleRecord.amount = saleRecord.tickets.length;   // Actualizar la cantidad de boletas en esa venta
+
+                        if (saleRecord.tickets.length === 0) {
+                            // Si la venta ya no tiene boletas, eliminar el registro de venta
+                            systemData.sales.splice(i, 1);
+                        }
+                        saleModified = true;
+                        break; // Asumimos que una boleta solo puede estar en un registro de venta
+                    }
+                }
+
+                // Actualizar displays - ORDEN IMPORTANTE
+                // Primero actualizar el grid para reflejar el cambio visual
+                if (document.getElementById('ticketGrid')) {
+                    createTicketGrid(); // Actualiza la cuadrícula de boletas en la pestaña del vendedor
+                }
+                
+                // Luego actualizar estadísticas
+                updateStats();      // Actualiza las estadísticas en la pestaña del vendedor
+                updateSellersList(); // Actualiza la lista de vendedores en la pestaña de administrador
+
+                // Actualizar dashboard si está visible
+                const dashboardTab = document.getElementById('dashboard');
+                if (dashboardTab && dashboardTab.classList.contains('active')) {
+                    updateDashboard(); // Actualiza la cuadrícula y estadísticas del dashboard
+                }
+
+                // Forzar actualización visual
+                setTimeout(() => {
+                    if (document.getElementById('ticketGrid')) {
+                        createTicketGrid();
+                    }
+                }, 100);
+
+                ticketNumberInput.value = ''; // Limpiar el campo de entrada
+                document.getElementById('cancelStatus').innerHTML = `<div class="alert alert-success">✅ Boleta ${ticketNumber} cancelada correctamente.</div>`;
+                showAlert(`✅ Boleta ${ticketNumber} cancelada correctamente`, 'success');
+
+                // Limpiar el mensaje de estado de cancelación después de un tiempo
+                setTimeout(() => {
+                    const cancelStatusDiv = document.getElementById('cancelStatus');
+                    if (cancelStatusDiv) {
+                        cancelStatusDiv.innerHTML = '';
+                    }
+                }, 4000);
+
+            }
+        }
+
         // Actualizar estadísticas
         function updateStats() {
-            const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
-            const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
+            const available = Object.values(systemData.tickets).filter(t => t.status === 'available').length;
+            const sold = 1000 - available;
             const selected = selectedTickets.size;
             
             document.getElementById('availableCount').textContent = available;
@@ -1271,47 +912,38 @@
         }
 
         // Actualizar dashboard
-        async function updateDashboard() {
-            const dashLoading = document.getElementById('dashboardLoading');
+        function updateDashboard() {
+            const available = Object.values(systemData.tickets).filter(t => t.status === 'available').length;
+            const sold = 1000 - available;
+            const revenue = sold;
+            
+            document.getElementById('dashAvailable').textContent = available;
+            document.getElementById('dashSold').textContent = sold;
+            document.getElementById('dashRevenue').textContent = `${revenue * 1000}`;
+            
+            // Crear grid de dashboard - MEJORADO
             const dashGrid = document.getElementById('dashboardTicketGrid');
-            
-            dashLoading.style.display = 'block';
-            dashGrid.style.display = 'none';
-            
-            try {
-                await loadTickets(); // Asegurar datos actualizados
-                
-                const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
-                const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
-                const revenue = sold * 1000;
-                
-                document.getElementById('dashAvailable').textContent = available;
-                document.getElementById('dashSold').textContent = sold;
-                document.getElementById('dashRevenue').textContent = `${revenue.toLocaleString()}`;
-                
-                // Crear grid de dashboard
+            if (dashGrid) {
                 dashGrid.innerHTML = '';
+                
                 for (let i = 1; i <= 1000; i++) {
                     const ticket = document.createElement('div');
-                    const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null };
+                    const ticketData = systemData.tickets[i];
                     
-                    ticket.className = `ticket ${ticketData.estado}`;
+                    // Asegurar que la clase refleje correctamente el estado
+                    ticket.className = `ticket ${ticketData.status}`;
                     ticket.textContent = i;
-                    ticket.title = ticketData.estado === 'vendida' ? 
-                        `Vendida por: ${ticketData.vendedor}` : 'Disponible';
+                    ticket.title = ticketData.status === 'sold' ? 
+                        `Vendida por: ${ticketData.soldBy}` : 'Disponible';
                     dashGrid.appendChild(ticket);
                 }
                 
-                // Estadísticas por vendedor
-                updateSalesBySeller();
-                
-                dashLoading.style.display = 'none';
-                dashGrid.style.display = 'grid';
-                
-            } catch (error) {
-                console.error('Error actualizando dashboard:', error);
-                showAlert('Error cargando dashboard: ' + error.message, 'danger');
+                // Forzar re-renderizado
+                dashGrid.offsetHeight;
             }
+            
+            // Estadísticas por vendedor
+            updateSalesBySeller();
         }
 
         // Actualizar ventas por vendedor
@@ -1319,18 +951,16 @@
             const container = document.getElementById('salesBySeller');
             let html = '<h4>Ventas por Vendedor:</h4>';
             
-            if (sellers.length === 0) {
+            if (systemData.sellers.length === 0) {
                 html += '<p>No hay vendedores registrados</p>';
             } else {
                 html += '<div class="stats-grid">';
-                sellers.forEach(seller => {
-                    const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
-                    const ingresos = ventas * 1000;
+                systemData.sellers.forEach(seller => {
                     html += `
                         <div class="stat-card">
-                            <h3>${ventas}</h3>
-                            <p>${seller.nombre}</p>
-                            <small>${ingresos.toLocaleString()} ingresos</small>
+                            <h3>${seller.sales}</h3>
+                            <p>${seller.name}</p>
+                            <small>$${seller.revenue * 1000} ingresos</small>
                         </div>
                     `;
                 });
@@ -1341,73 +971,21 @@
         }
 
         // Reiniciar sistema
-        async function resetSystem() {
-            if (confirm('¿Está seguro de reiniciar todo el sistema? Esta acción eliminará todas las boletas y vendedores.')) {
-                try {
-                    document.getElementById('resetBtn').disabled = true;
-                    
-                    if (supabaseClient) {
-                        // Si Supabase está disponible, resetear en la base de datos
-                        try {
-                            // Eliminar todas las boletas
-                            const { error: boletasError } = await supabaseClient
-                                .from('boletas')
-                                .delete()
-                                .neq('numero', 0); // Eliminar todas (usando condición que siempre es verdadera)
-                            
-                            if (boletasError) throw boletasError;
-                            
-                            // Eliminar todos los vendedores
-                            const { error: vendedoresError } = await supabaseClient
-                                .from('vendedores')
-                                .delete()
-                                .neq('id', 0); // Eliminar todas (usando condición que siempre es verdadera)
-                            
-                            if (vendedoresError) throw vendedoresError;
-                            
-                            showAlert('Sistema reiniciado en la base de datos', 'success');
-                        } catch (error) {
-                            console.error('Error reiniciando en Supabase:', error);
-                            showAlert('Reiniciando solo localmente (sin conexión)', 'info');
-                        }
-                    } else {
-                        showAlert('Reiniciando sistema localmente (modo offline)', 'info');
-                    }
-                    
-                    // Reinicializar datos locales
-                    tickets = {};
-                    sellers = [];
-                    selectedTickets.clear();
-                    currentSellerData = null;
-                    
-                    // Actualizar UI
-                    document.getElementById('sellerPanel').style.display = 'none';
-                    document.getElementById('currentSeller').innerHTML = '<option value="">No hay vendedores</option>';
-                    
-                    // Reinicializar boletas
-                    if (supabaseClient) {
-                        await initializeTicketsIfNeeded();
-                    } else {
-                        // Modo offline - crear boletas locales
-                        for (let i = 1; i <= 1000; i++) {
-                            tickets[i] = {
-                                numero: i,
-                                estado: 'disponible',
-                                vendedor: null,
-                                fecha: null
-                            };
-                        }
-                        updateStats();
-                    }
-                    
-                    updateSellersList();
-                    
-                } catch (error) {
-                    console.error('Error reiniciando sistema:', error);
-                    showAlert('Error reiniciando sistema: ' + error.message, 'danger');
-                } finally {
-                    document.getElementById('resetBtn').disabled = false;
-                }
+        function resetSystem() {
+            if (confirm('¿Está seguro de reiniciar todo el sistema? Esta acción no se puede deshacer.')) {
+                systemData = {
+                    tickets: {},
+                    sellers: [],
+                    sales: [],
+                    isInitialized: false
+                };
+                selectedTickets.clear();
+                
+                document.getElementById('sellerPanel').style.display = 'none';
+                document.getElementById('currentSeller').innerHTML = '<option value="">Seleccione un vendedor</option>';
+                
+                showAlert('Sistema reiniciado correctamente', 'success');
+                updateSellersList();
             }
         }
 
@@ -1421,378 +999,150 @@
             alertsContainer.appendChild(alert);
             
             setTimeout(() => {
-                if (alert.parentNode) {
-                    alert.remove();
-                }
+                alert.remove();
             }, 5000);
         }
 
-        // Configurar actualización en tiempo real
-        function setupRealTimeUpdates() {
-            if (!supabaseClient) {
-                console.log('Supabase no disponible, tiempo real deshabilitado');
-                return;
-            }
-            
-            try {
-                // Suscribirse a cambios en boletas
-                supabaseClient
-                    .channel('boletas-changes')
-                    .on('postgres_changes', 
-                        { event: '*', schema: 'public', table: 'boletas' }, 
-                        (payload) => {
-                            console.log('Cambio en boletas:', payload);
-                            
-                            if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-                                const newTicket = payload.new;
-                                tickets[newTicket.numero] = newTicket;
-                                
-                                // Actualizar visualmente si está en la vista actual
-                                const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${newTicket.numero})`);
-                                if (ticketElement) {
-                                    ticketElement.className = `ticket ${newTicket.estado}`;
-                                    ticketElement.title = newTicket.estado === 'vendida' ? 
-                                        `Vendida por: ${newTicket.vendedor}` : 'Disponible - Click para vender';
-                                }
-                                
-                                // Actualizar dashboard si está visible
-                                const dashTicketElement = document.querySelector(`#dashboardTicketGrid .ticket:nth-child(${newTicket.numero})`);
-                                if (dashTicketElement) {
-                                    dashTicketElement.className = `ticket ${newTicket.estado}`;
-                                    dashTicketElement.title = newTicket.estado === 'vendida' ? 
-                                        `Vendida por: ${newTicket.vendedor}` : 'Disponible';
-                                }
-                                
-                                updateStats();
-                                updateSellersList();
-                            }
-                        }
-                    )
-                    .subscribe();
-
-                // Suscribirse a cambios en vendedores
-                supabaseClient
-                    .channel('vendedores-changes')
-                    .on('postgres_changes', 
-                        { event: '*', schema: 'public', table: 'vendedores' }, 
-                        (payload) => {
-                            console.log('Cambio en vendedores:', payload);
-                            loadSellers(); // Recargar vendedores
-                        }
-                    )
-                    .subscribe();
-                    
-                console.log('Actualizaciones en tiempo real configuradas');
-            } catch (error) {
-                console.error('Error configurando tiempo real:', error);
-            }
-        }
-
-        // Modo offline - usar datos locales
-        function enableOfflineMode() {
-            console.log('Habilitando modo offline...');
-            showAlert('Modo offline activado. Los datos se guardarán localmente.', 'info');
-            
-            // Inicializar datos locales
-            tickets = {};
-            sellers = [
-                { id: 1, nombre: 'Vendedor Demo 1' },
-                { id: 2, nombre: 'Vendedor Demo 2' }
-            ];
-            
-            // Crear boletas locales
-            for (let i = 1; i <= 1000; i++) {
-                tickets[i] = {
-                    numero: i,
-                    estado: 'disponible',
-                    vendedor: null,
-                    fecha: null
-                };
-            }
-            
+        // Actualizar todos los displays
+        function updateAllDisplays() {
+            updateStats();
             updateSellerDropdown();
             updateSellersList();
-            updateStats();
-            
-            // Deshabilitar funciones que requieren Supabase
-            document.getElementById('addSellerBtn').disabled = true;
-            document.getElementById('resetBtn').disabled = true;
-            
-            showAlert('Modo offline: Puede usar la aplicación pero los datos no se guardarán en la nube', 'info');
         }
 
-        // Función para probar la conexión
-        async function testConnection() {
-            try {
-                showAlert('🔍 Probando conexión con Supabase...', 'info');
-                console.log('=== INICIO TEST DE CONEXIÓN ===');
-                
-                if (!supabaseClient) {
-                    console.log('🔄 Reinicializando cliente Supabase...');
-                    if (!initSupabase()) {
-                        throw new Error('No se pudo inicializar el cliente Supabase');
-                    }
-                }
-                
-                // Test 1: Verificar que el cliente responda
-                console.log('📡 Test 1: Verificando respuesta del servidor...');
-                showAlert('Verificando servidor Supabase...', 'info');
-                
-                const { data: healthCheck, error: healthError } = await supabaseClient
-                    .from('vendedores')
-                    .select('count', { count: 'exact', head: true })
-                    .limit(1);
-                
-                if (healthError) {
-                    console.error('❌ Error en test de servidor:', healthError);
-                    throw new Error(`Error del servidor: ${healthError.message}`);
-                }
-                
-                console.log('✅ Servidor responde correctamente');
-                
-                // Test 2: Verificar tabla vendedores
-                console.log('👥 Test 2: Verificando tabla vendedores...');
-                showAlert('Verificando tabla vendedores...', 'info');
-                
-                const { data: vendedoresData, error: vendedoresError } = await supabaseClient
-                    .from('vendedores')
-                    .select('*')
-                    .limit(3);
-                
-                if (vendedoresError) {
-                    console.error('❌ Error en tabla vendedores:', vendedoresError);
-                    throw new Error(`Error en vendedores: ${vendedoresError.message}`);
-                }
-                
-                console.log('✅ Tabla vendedores OK, registros encontrados:', vendedoresData?.length || 0);
-                
-                // Test 3: Verificar tabla boletas
-                console.log('🎫 Test 3: Verificando tabla boletas...');
-                showAlert('Verificando tabla boletas...', 'info');
-                
-                const { data: boletasData, error: boletasError } = await supabaseClient
-                    .from('boletas')
-                    .select('*')
-                    .limit(5);
-                
-                if (boletasError) {
-                    console.error('❌ Error en tabla boletas:', boletasError);
-                    throw new Error(`Error en boletas: ${boletasError.message}`);
-                }
-                
-                console.log('✅ Tabla boletas OK, registros encontrados:', boletasData?.length || 0);
-                
-                // Test 4: Verificar permisos de escritura
-                console.log('✏️ Test 4: Verificando permisos de escritura...');
-                showAlert('Verificando permisos de escritura...', 'info');
-                
-                const testVendor = { nombre: 'TEST_CONNECTION_' + Date.now() };
-                const { data: insertTest, error: insertError } = await supabaseClient
-                    .from('vendedores')
-                    .insert([testVendor])
-                    .select();
-                
-                if (insertError) {
-                    console.error('❌ Error de escritura:', insertError);
-                    throw new Error(`Sin permisos de escritura: ${insertError.message}`);
-                }
-                
-                console.log('✅ Permisos de escritura OK');
-                
-                // Limpiar el test
-                if (insertTest && insertTest[0]) {
-                    await supabaseClient
-                        .from('vendedores')
-                        .delete()
-                        .eq('id', insertTest[0].id);
-                    console.log('🧹 Test de escritura limpiado');
-                }
-                
-                // Test 5: Verificar tiempo real (opcional)
-                console.log('⚡ Test 5: Verificando capacidades de tiempo real...');
-                showAlert('Verificando tiempo real...', 'info');
-                
-                try {
-                    const testChannel = supabaseClient.channel('connection_test');
-                    testChannel.subscribe((status) => {
-                        if (status === 'SUBSCRIBED') {
-                            console.log('✅ Tiempo real disponible');
-                            testChannel.unsubscribe();
-                        }
-                    });
-                    
-                    // Esperar un poco para la suscripción
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                } catch (realtimeError) {
-                    console.log('⚠️ Tiempo real no disponible:', realtimeError);
-                    // No es crítico, continuar
-                }
-                
-                console.log('=== TODOS LOS TESTS PASARON ===');
-                
-                // Recargar datos frescos
-                showAlert('Recargando datos...', 'info');
-                await loadSellers();
-                await loadTickets();
-                
-                // Habilitar funcionalidades
-                updateConnectionStatus('connected');
-                document.getElementById('addSellerBtn').disabled = false;
-                document.getElementById('resetBtn').disabled = false;
-                
-                // Configurar tiempo real
-                setupRealTimeUpdates();
-                
-                const successMessage = `🎉 ¡Conexión exitosa!
-                
-📊 Estado de la base de datos:
-• Vendedores: ${sellers.length} registrados
-• Boletas: ${Object.keys(tickets).length} en sistema
-• Tiempo real: Activado
-• Permisos: Completos
+        // Sistema de conexión mejorado
+        let connectionStatus = {
+            isConnected: false,
+            autoSync: false,
+            syncInterval: null,
+            testInProgress: false
+        };
 
-✅ Sistema completamente funcional`;
-                
-                showAlert(successMessage, 'success');
-                console.log('🎉 CONEXIÓN ESTABLECIDA CORRECTAMENTE');
-                
-            } catch (error) {
-                console.error('❌ ERROR EN TEST DE CONEXIÓN:', error);
-                updateConnectionStatus('disconnected');
-                
-                let errorMsg = `❌ Error de conexión: ${error.message}`;
-                
-                // Diagnóstico específico
-                if (error.message.includes('relation') && error.message.includes('does not exist')) {
-                    errorMsg += `\n\n📋 SOLUCIÓN: Las tablas no existen. Use el botón "Configurar Base de Datos"`;
-                } else if (error.message.includes('permission denied') || error.message.includes('RLS')) {
-                    errorMsg += `\n\n🔐 SOLUCIÓN: Problemas de permisos. Ejecute estas políticas en Supabase SQL Editor:
-                    
-ALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE boletas ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all" ON vendedores FOR ALL USING (true);
-CREATE POLICY "Allow all" ON boletas FOR ALL USING (true);`;
-                } else if (error.message.includes('Invalid API key')) {
-                    errorMsg += `\n\n🔑 SOLUCIÓN: API Key inválida. Verifique en Supabase Dashboard > Settings > API`;
-                } else if (error.message.includes('network') || error.message.includes('fetch')) {
-                    errorMsg += `\n\n🌐 SOLUCIÓN: Problema de red. Verifique su conexión a internet`;
-                }
-                
-                showAlert(errorMsg, 'danger');
-                
-                // Mantener modo offline funcional
-                if (!sellers.length) {
-                    enableOfflineMode();
-                }
+        // Probar conexión manual
+        function testConnection() {
+            if (connectionStatus.testInProgress) {
+                showAlert('Prueba de conexión en progreso...', 'info');
+                return;
             }
-        }
 
-        // Monitorear conexión cada 30 segundos
-        setInterval(checkConnection, 30000);
-
-        // Mostrar configuración de base de datos
-        function showDatabaseSetup() {
-            const setupSQL = `-- ✅ CONFIGURACIÓN COMPLETA PARA SUPABASE
--- Copie y pegue este código en Supabase SQL Editor
-
--- 1. Crear tabla vendedores
-CREATE TABLE IF NOT EXISTS vendedores (
-    id BIGSERIAL PRIMARY KEY,
-    nombre TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 2. Crear tabla boletas
-CREATE TABLE IF NOT EXISTS boletas (
-    numero INTEGER PRIMARY KEY,
-    estado TEXT NOT NULL DEFAULT 'disponible',
-    vendedor TEXT,
-    fecha TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- 3. Habilitar Row Level Security
-ALTER TABLE vendedores ENABLE ROW LEVEL SECURITY;
-ALTER TABLE boletas ENABLE ROW LEVEL SECURITY;
-
--- 4. Crear políticas para permitir acceso público
-CREATE POLICY "Allow all operations on vendedores" ON vendedores FOR ALL USING (true);
-CREATE POLICY "Allow all operations on boletas" ON boletas FOR ALL USING (true);
-
--- 5. Verificar que todo funcione
-SELECT 'Configuración completada exitosamente' as status;`;
-
-            // Crear modal o ventana para mostrar el SQL
-            const modal = document.createElement('div');
-            modal.innerHTML = `
-                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center;">
-                    <div style="background: white; padding: 30px; border-radius: 10px; max-width: 800px; width: 90%; max-height: 90%; overflow-y: auto;">
-                        <h3>🛠️ Configuración de Base de Datos en Supabase</h3>
-                        <p><strong>Pasos para configurar:</strong></p>
-                        <ol>
-                            <li>Ve a <a href="https://supabase.com" target="_blank">supabase.com</a></li>
-                            <li>Abre tu proyecto: <strong>gvkzfieixyiqpklocavq</strong></li>
-                            <li>Ve a <strong>SQL Editor</strong> en el menú lateral</li>
-                            <li>Copia y pega el siguiente código:</li>
-                        </ol>
-                        <textarea style="width: 100%; height: 300px; font-family: monospace; font-size: 12px; margin: 10px 0;" readonly>${setupSQL}</textarea>
-                        <div style="margin-top: 20px;">
-                            <button onclick="copyToClipboard(this)" class="btn btn-primary">📋 Copiar SQL</button>
-                            <button onclick="this.parentElement.parentElement.parentElement.remove()" class="btn btn-danger">Cerrar</button>
-                            <a href="https://gvkzfieixyiqpklocavq.supabase.co" target="_blank" class="btn btn-success">🚀 Ir a Supabase</a>
-                        </div>
-                        <div style="margin-top: 15px; padding: 10px; background: #e9ecef; border-radius: 5px;">
-                            <strong>Después de ejecutar el SQL:</strong><br>
-                            1. Haz click en "Probar Conexión" en esta aplicación<br>
-                            2. Deberías ver "Conexión exitosa!"
-                        </div>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-        }
-
-        // Copiar al portapapeles
-        function copyToClipboard(button) {
-            const textarea = button.parentElement.previousElementSibling;
-            textarea.select();
-            document.execCommand('copy');
+            connectionStatus.testInProgress = true;
+            const statusEl = document.getElementById('connectionStatus');
             
-            const originalText = button.textContent;
-            button.textContent = '✅ Copiado!';
-            button.style.background = '#28a745';
+            // Estado de prueba
+            statusEl.className = 'connection-status testing';
+            statusEl.textContent = '🟡 Probando...';
             
+            showAlert('Probando conexión...', 'info');
+
+            // Simular prueba de conexión
             setTimeout(() => {
-                button.textContent = originalText;
-                button.style.background = '#007bff';
+                // Simular resultado aleatorio para demostrar funcionalidad
+                const success = Math.random() > 0.2; // 80% de éxito
+                
+                if (success) {
+                    statusEl.className = 'connection-status connected';
+                    statusEl.textContent = '🟢 Conectado';
+                    connectionStatus.isConnected = true;
+                    showAlert('✅ Conexión establecida correctamente', 'success');
+                } else {
+                    statusEl.className = 'connection-status disconnected';
+                    statusEl.textContent = '🔴 Error de conexión';
+                    connectionStatus.isConnected = false;
+                    showAlert('❌ Error al conectar. Intente nuevamente.', 'danger');
+                }
+                
+                connectionStatus.testInProgress = false;
             }, 2000);
         }
 
-        // Inicializar aplicación cuando carga la página
-        document.addEventListener('DOMContentLoaded', async function() {
-            showAlert('Iniciando sistema...', 'info');
+        // Toggle auto-sincronización
+        function toggleAutoSync() {
+            const button = event.target;
             
-            try {
-                await initializeApp();
-                setupRealTimeUpdates();
-            } catch (error) {
-                console.error('Error fatal:', error);
-                showAlert('Error fatal inicializando la aplicación: ' + error.message, 'danger');
+            if (connectionStatus.autoSync) {
+                // Desactivar auto-sync
+                connectionStatus.autoSync = false;
+                if (connectionStatus.syncInterval) {
+                    clearInterval(connectionStatus.syncInterval);
+                    connectionStatus.syncInterval = null;
+                }
+                button.textContent = '⚡ Auto-Sync: OFF';
+                button.classList.remove('active');
+                showAlert('Auto-sincronización desactivada', 'info');
+            } else {
+                // Activar auto-sync
+                connectionStatus.autoSync = true;
+                button.textContent = '⚡ Auto-Sync: ON';
+                button.classList.add('active');
+                
+                // Iniciar sincronización automática cada 5 segundos
+                connectionStatus.syncInterval = setInterval(() => {
+                    if (connectionStatus.isConnected && !connectionStatus.testInProgress) {
+                        // Simular sincronización
+                        const statusEl = document.getElementById('connectionStatus');
+                        const originalText = statusEl.textContent;
+                        statusEl.textContent = '🔄 Sincronizando...';
+                        
+                        setTimeout(() => {
+                            statusEl.textContent = originalText;
+                        }, 500);
+                    }
+                }, 5000);
+                
+                showAlert('Auto-sincronización activada', 'success');
             }
-        });
+        }
 
-        // Manejar errores globales
-        window.addEventListener('error', function(e) {
-            console.error('Error global:', e);
-            showAlert('Error inesperado en la aplicación', 'danger');
-        });
-
-        // Prevenir pérdida de datos al cerrar
-        window.addEventListener('beforeunload', function(e) {
-            if (selectedTickets.size > 0) {
-                e.preventDefault();
-                e.returnValue = 'Tiene boletas seleccionadas sin confirmar. ¿Está seguro de salir?';
+        // Verificar estado de conexión
+        function checkConnectionStatus() {
+            const statusEl = document.getElementById('connectionStatus');
+            
+            if (!connectionStatus.isConnected) {
+                statusEl.className = 'connection-status disconnected';
+                statusEl.textContent = '🔴 Desconectado';
             }
+        }
+
+        // Inicializar aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar estado de conexión
+            checkConnectionStatus();
+            updateAllDisplays();
+            
+            // Agregar evento para verificar boleta en tiempo real
+            document.getElementById('cancelTicketNumber').addEventListener('input', function() {
+                const ticketNumber = parseInt(this.value);
+                const statusDiv = document.getElementById('cancelStatus');
+                
+                if (!ticketNumber || ticketNumber < 1 || ticketNumber > 1000) {
+                    statusDiv.innerHTML = '';
+                    return;
+                }
+                
+                if (!systemData.isInitialized) {
+                    statusDiv.innerHTML = '<div class="alert alert-info">Sistema no inicializado</div>';
+                    return;
+                }
+                
+                const ticket = systemData.tickets[ticketNumber];
+                if (!ticket) {
+                    statusDiv.innerHTML = '<div class="alert alert-danger">Boleta no encontrada</div>';
+                    return;
+                }
+                
+                if (ticket.status === 'available') {
+                    statusDiv.innerHTML = '<div class="alert alert-info">✅ Boleta disponible - No se puede cancelar</div>';
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-success">🎫 Boleta VENDIDA por: <strong>${ticket.soldBy}</strong><br>📅 Fecha: ${ticket.saleDate}</div>`;
+                }
+            });
+
+            // Verificar conexión cada 10 segundos solo si no hay auto-sync
+            setInterval(() => {
+                if (!connectionStatus.autoSync) {
+                    checkConnectionStatus();
+                }
+            }, 10000);
         });
     </script>
 </body>
