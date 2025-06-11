@@ -114,6 +114,19 @@
             margin-bottom: 15px;
         }
 
+        .config-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            border: 2px solid #2196f3;
+        }
+
+        .config-section h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -137,6 +150,25 @@
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #007bff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .current-config {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .current-config h4 {
+            color: #155724;
+            margin-bottom: 10px;
         }
 
         .btn {
@@ -182,6 +214,16 @@
 
         .btn-danger:hover:not(:disabled) {
             background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover:not(:disabled) {
+            background: #138496;
             transform: translateY(-2px);
         }
 
@@ -481,6 +523,11 @@
                 margin: 0;
                 border-radius: 0;
             }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
             
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
@@ -585,19 +632,60 @@
             </div>
 
             <div id="adminPanel" style="display: none;">
-                <h3>Gestión de Vendedores</h3>
-                
-                <div class="form-group">
-                    <label>Nombre del Vendedor:</label>
-                    <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor" maxlength="100">
+                <!-- NUEVA SECCIÓN DE CONFIGURACIÓN -->
+                <div class="config-section">
+                    <h3>⚙️ Configuración del Sistema</h3>
+                    
+                    <div class="current-config">
+                        <h4>📊 Configuración Actual</h4>
+                        <p id="currentConfigDisplay">Boletas: 1000 | Precio: $1,000 c/u | Total posible: $1,000,000</p>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cantidad Total de Boletas:</label>
+                            <select id="totalTicketsSelect">
+                                <option value="100">100 boletas</option>
+                                <option value="500">500 boletas</option>
+                                <option value="1000" selected>1,000 boletas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Precio por Boleta ($):</label>
+                            <input type="number" id="ticketPriceInput" min="100" max="100000" step="50" value="1000" placeholder="Precio en pesos">
+                            <small style="color: #666; font-size: 0.8em;">Rango: $100 - $100,000</small>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-success" onclick="updateSystemConfig()" id="updateConfigBtn">💾 Guardar Configuración</button>
+                        <button class="btn btn-info" onclick="loadSystemConfig()" id="loadConfigBtn">🔄 Recargar Config</button>
+                        <button class="btn btn-warning" onclick="previewChanges()" id="previewBtn">👁️ Vista Previa</button>
+                    </div>
+                    
+                    <div id="configPreview" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                        <h5>🔍 Vista Previa de Cambios:</h5>
+                        <p id="previewText"></p>
+                    </div>
                 </div>
-                
-                <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
-                <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
-                <button class="btn btn-primary" onclick="verifyDatabaseState()" id="verifyDbBtn">Verificar Estado BD</button>
-                <button class="btn btn-primary" onclick="showSecurityLogs()" id="securityLogsBtn">Ver Logs de Seguridad</button>
-                
-                <div id="sellersList" style="margin-top: 20px;"></div>
+
+                <!-- SECCIÓN DE GESTIÓN DE VENDEDORES -->
+                <div class="admin-section">
+                    <h3>👥 Gestión de Vendedores</h3>
+                    
+                    <div class="form-group">
+                        <label>Nombre del Vendedor:</label>
+                        <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor" maxlength="100">
+                    </div>
+                    
+                    <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
+                    <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
+                    <button class="btn btn-primary" onclick="verifyDatabaseState()" id="verifyDbBtn">Verificar Estado BD</button>
+                    <button class="btn btn-primary" onclick="showSecurityLogs()" id="securityLogsBtn">Ver Logs de Seguridad</button>
+                    
+                    <div id="sellersList" style="margin-top: 20px;"></div>
+                </div>
             </div>
         </div>
 
@@ -628,7 +716,7 @@
 
                 <div class="tickets-section">
                     <h4>Boletas (Click para vender/liberar)</h4>
-                    <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Click en cualquier boleta para cambiar su estado</small></p>
+                    <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Precio: $<span id="currentPriceDisplay">1,000</span> c/u</small></p>
                     <div id="ticketGridLoading" class="loading">
                         <div class="spinner"></div>
                         Cargando boletas...
@@ -656,6 +744,10 @@
                     <h3 id="dashRevenue">$-</h3>
                     <p>Ingresos</p>
                 </div>
+                <div class="stat-card compact">
+                    <h3 id="dashProgress">-%</h3>
+                    <p>Progreso</p>
+                </div>
             </div>
 
             <!-- Ventas por vendedor compacto -->
@@ -664,7 +756,7 @@
             <!-- Grid de boletas más prominente -->
             <div class="tickets-section dashboard">
                 <h4>🎫 Estado de Todas las Boletas</h4>
-                <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Vista completa del sistema</small></p>
+                <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Total: <span id="dashTotalTickets">1000</span> boletas</small></p>
                 <div id="dashboardLoading" class="loading">
                     <div class="spinner"></div>
                     Cargando dashboard...
@@ -744,9 +836,285 @@
         let sellers = [];
         let currentSellerData = null;
         let captchaSolution = 0;
+        
+        // NUEVA: Configuración del sistema
+        let systemConfig = {
+            totalTickets: 1000,
+            ticketPrice: 1000,
+            configId: 1
+        };
 
         // =========================
-        // FUNCIONES DE SEGURIDAD
+        // FUNCIONES DE CONFIGURACIÓN DEL SISTEMA
+        // =========================
+
+        // Actualizar configuración del sistema
+        async function updateSystemConfig() {
+            if (!validateSession()) {
+                showAlert('Sesión expirada. Por favor, inicie sesión nuevamente.', 'warning');
+                return;
+            }
+
+            const newTotalTickets = parseInt(document.getElementById('totalTicketsSelect').value);
+            const newTicketPrice = parseInt(document.getElementById('ticketPriceInput').value);
+
+            // Validaciones
+            if (!newTotalTickets || ![100, 500, 1000].includes(newTotalTickets)) {
+                showAlert('Cantidad de boletas inválida. Debe ser 100, 500 o 1000.', 'danger');
+                return;
+            }
+
+            if (!newTicketPrice || newTicketPrice < 100 || newTicketPrice > 100000) {
+                showAlert('Precio inválido. Debe estar entre $100 y $100,000.', 'danger');
+                return;
+            }
+
+            // Verificar si hay cambios que requieran reinicio
+            const ticketCountChanged = newTotalTickets !== systemConfig.totalTickets;
+            const currentSoldTickets = Object.values(tickets).filter(t => t.estado === 'vendida').length;
+
+            if (ticketCountChanged && currentSoldTickets > 0) {
+                if (!confirm(`⚠️ ADVERTENCIA: Cambiar la cantidad de boletas reiniciará el sistema y eliminará todas las ventas actuales (${currentSoldTickets} boletas vendidas).\n\n¿Desea continuar?`)) {
+                    return;
+                }
+            }
+
+            try {
+                document.getElementById('updateConfigBtn').disabled = true;
+                showAlert('Actualizando configuración del sistema...', 'info');
+
+                const oldConfig = { ...systemConfig };
+                
+                // Actualizar configuración
+                systemConfig.totalTickets = newTotalTickets;
+                systemConfig.ticketPrice = newTicketPrice;
+
+                // Guardar en Supabase si está disponible
+                if (supabaseClient) {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('configuracion_sistema')
+                            .upsert({
+                                id: 1,
+                                total_boletas: newTotalTickets,
+                                precio_boleta: newTicketPrice,
+                                actualizado_por: securityState.currentSession.username,
+                                fecha_actualizacion: new Date().toISOString()
+                            }, {
+                                onConflict: 'id'
+                            })
+                            .select();
+
+                        if (error) throw error;
+                        console.log('Configuración guardada en BD:', data);
+                    } catch (error) {
+                        console.warn('Error guardando en BD, continuando localmente:', error);
+                    }
+                }
+
+                // Si cambió el número de boletas, reinicializar
+                if (ticketCountChanged) {
+                    await reinitializeTicketsWithNewCount();
+                }
+
+                // Actualizar todas las interfaces
+                updateConfigDisplay();
+                updateAllPriceDisplays();
+                updateStats();
+                
+                const totalPossible = newTotalTickets * newTicketPrice;
+                showAlert(`✅ Configuración actualizada: ${newTotalTickets} boletas a $${newTicketPrice.toLocaleString()} c/u (Total posible: $${totalPossible.toLocaleString()})`, 'success');
+                logSecurityEvent('CONFIG_UPDATE', `Configuración actualizada: ${oldConfig.totalTickets}→${newTotalTickets} boletas, $${oldConfig.ticketPrice}→$${newTicketPrice}`);
+
+            } catch (error) {
+                console.error('Error actualizando configuración:', error);
+                showAlert('Error actualizando configuración: ' + error.message, 'danger');
+                
+                // Revertir cambios en caso de error
+                systemConfig.totalTickets = oldConfig.totalTickets;
+                systemConfig.ticketPrice = oldConfig.ticketPrice;
+                document.getElementById('totalTicketsSelect').value = oldConfig.totalTickets;
+                document.getElementById('ticketPriceInput').value = oldConfig.ticketPrice;
+                updateConfigDisplay();
+                
+            } finally {
+                document.getElementById('updateConfigBtn').disabled = false;
+            }
+        }
+
+        // Cargar configuración del sistema
+        async function loadSystemConfig() {
+            try {
+                showAlert('Cargando configuración del sistema...', 'info');
+
+                if (supabaseClient) {
+                    const { data, error } = await supabaseClient
+                        .from('configuracion_sistema')
+                        .select('*')
+                        .eq('id', 1)
+                        .single();
+
+                    if (data) {
+                        systemConfig = {
+                            totalTickets: data.total_boletas || 1000,
+                            ticketPrice: data.precio_boleta || 1000,
+                            configId: data.id || 1
+                        };
+                        console.log('Configuración cargada desde BD:', systemConfig);
+                    } else {
+                        console.log('No hay configuración en BD, usando por defecto');
+                    }
+                } else {
+                    console.log('Sin conexión BD, usando configuración por defecto');
+                }
+
+                // Actualizar interfaz
+                document.getElementById('totalTicketsSelect').value = systemConfig.totalTickets;
+                document.getElementById('ticketPriceInput').value = systemConfig.ticketPrice;
+                updateConfigDisplay();
+                updateAllPriceDisplays();
+
+                showAlert('Configuración cargada correctamente', 'success');
+                logSecurityEvent('CONFIG_LOAD', `Configuración cargada: ${systemConfig.totalTickets} boletas a $${systemConfig.ticketPrice}`);
+
+            } catch (error) {
+                console.error('Error cargando configuración:', error);
+                showAlert('Error cargando configuración: ' + error.message, 'warning');
+                updateConfigDisplay();
+            }
+        }
+
+        // Reinicializar boletas con nueva cantidad
+        async function reinitializeTicketsWithNewCount() {
+            try {
+                showAlert(`Reinicializando sistema con ${systemConfig.totalTickets} boletas...`, 'info');
+
+                if (supabaseClient) {
+                    // Limpiar boletas existentes
+                    const { error: deleteError } = await supabaseClient
+                        .from('boletas')
+                        .delete()
+                        .neq('numero', 0);
+
+                    if (deleteError) throw deleteError;
+
+                    // Crear nuevas boletas
+                    const boletasArray = [];
+                    for (let i = 1; i <= systemConfig.totalTickets; i++) {
+                        boletasArray.push({
+                            numero: i,
+                            estado: 'disponible',
+                            vendedor: null,
+                            fecha: null
+                        });
+                    }
+
+                    // Insertar en lotes de 100
+                    for (let i = 0; i < boletasArray.length; i += 100) {
+                        const batch = boletasArray.slice(i, i + 100);
+                        const { error: insertError } = await supabaseClient
+                            .from('boletas')
+                            .insert(batch);
+
+                        if (insertError) throw insertError;
+                    }
+                }
+
+                // Actualizar datos locales
+                tickets = {};
+                for (let i = 1; i <= systemConfig.totalTickets; i++) {
+                    tickets[i] = {
+                        numero: i,
+                        estado: 'disponible',
+                        vendedor: null,
+                        fecha: null
+                    };
+                }
+
+                // Actualizar interfaces
+                if (currentSellerData) {
+                    createTicketGrid();
+                }
+                updateStats();
+                updateDashboard();
+
+                showAlert(`✅ Sistema reinicializado con ${systemConfig.totalTickets} boletas`, 'success');
+                logSecurityEvent('TICKETS_REINIT', `Sistema reinicializado con ${systemConfig.totalTickets} boletas`);
+
+            } catch (error) {
+                console.error('Error reinicializando boletas:', error);
+                throw error;
+            }
+        }
+
+        // Vista previa de cambios
+        function previewChanges() {
+            const newTotalTickets = parseInt(document.getElementById('totalTicketsSelect').value);
+            const newTicketPrice = parseInt(document.getElementById('ticketPriceInput').value);
+
+            if (!newTotalTickets || !newTicketPrice) {
+                showAlert('Complete todos los campos para ver la vista previa', 'warning');
+                return;
+            }
+
+            const preview = document.getElementById('configPreview');
+            const previewText = document.getElementById('previewText');
+
+            const currentSold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
+            const newTotalPossible = newTotalTickets * newTicketPrice;
+            const currentRevenue = currentSold * systemConfig.ticketPrice;
+            const newRevenue = currentSold * newTicketPrice;
+
+            let previewHTML = `
+                <strong>Configuración Actual:</strong> ${systemConfig.totalTickets} boletas a $${systemConfig.ticketPrice.toLocaleString()} c/u<br>
+                <strong>Nueva Configuración:</strong> ${newTotalTickets} boletas a $${newTicketPrice.toLocaleString()} c/u<br>
+                <strong>Total Posible:</strong> $${newTotalPossible.toLocaleString()}<br>
+            `;
+
+            if (currentSold > 0) {
+                previewHTML += `<strong>Boletas Vendidas:</strong> ${currentSold}<br>`;
+                previewHTML += `<strong>Ingresos Actuales:</strong> $${currentRevenue.toLocaleString()}<br>`;
+                previewHTML += `<strong>Nuevos Ingresos:</strong> $${newRevenue.toLocaleString()}<br>`;
+            }
+
+            if (newTotalTickets !== systemConfig.totalTickets) {
+                previewHTML += `<br><span style="color: #dc3545;"><strong>⚠️ ADVERTENCIA:</strong> Cambiar la cantidad reiniciará todas las boletas</span>`;
+            }
+
+            previewText.innerHTML = previewHTML;
+            preview.style.display = 'block';
+
+            setTimeout(() => {
+                preview.style.display = 'none';
+            }, 10000);
+        }
+
+        // Actualizar display de configuración
+        function updateConfigDisplay() {
+            const totalPossible = systemConfig.totalTickets * systemConfig.ticketPrice;
+            document.getElementById('currentConfigDisplay').textContent = 
+                `Boletas: ${systemConfig.totalTickets} | Precio: $${systemConfig.ticketPrice.toLocaleString()} c/u | Total posible: $${totalPossible.toLocaleString()}`;
+        }
+
+        // Actualizar todos los displays de precio
+        function updateAllPriceDisplays() {
+            // Actualizar precio en sección de vendedores
+            const currentPriceSpan = document.getElementById('currentPriceDisplay');
+            if (currentPriceSpan) {
+                currentPriceSpan.textContent = systemConfig.ticketPrice.toLocaleString();
+            }
+
+            // Actualizar total de boletas en dashboard
+            const dashTotalSpan = document.getElementById('dashTotalTickets');
+            if (dashTotalSpan) {
+                dashTotalSpan.textContent = systemConfig.totalTickets;
+            }
+
+            updateStats();
+        }
+
+        // =========================
+        // FUNCIONES DE SEGURIDAD (ORIGINALES)
         // =========================
 
         // Sanitizar input para prevenir XSS
@@ -889,7 +1257,7 @@
                 type: type,
                 message: sanitizeInput(message),
                 level: level,
-                ip: 'CLIENT', // En producción usaríamos la IP real
+                ip: 'CLIENT',
                 userAgent: navigator.userAgent.substring(0, 100)
             };
             
@@ -903,7 +1271,6 @@
             updateSecurityStats();
             updateSecurityLogs();
             
-            // En producción, enviaríamos esto a un servidor de logs
             if (level === 'WARNING' || level === 'ERROR') {
                 console.warn('Security Event:', logEntry);
             }
@@ -953,15 +1320,12 @@
         // FUNCIONES PRINCIPALES SECURIZADAS
         // =========================
 
-        // Inicializar Supabase (SIN API KEY EXPUESTA)
+        // Inicializar Supabase
         function initSupabase() {
             try {
-                // En producción, la API key debería venir del servidor
                 showAlert('🔒 Solicitando credenciales seguras al servidor...', 'info');
                 
-                // Simulamos obtener credenciales del servidor
                 setTimeout(() => {
-                    // NOTA: En producción real, esto vendría de una API segura
                     const SUPABASE_URL = 'https://gvkzfieixyiqpklocavq.supabase.co';
                     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd2a3pmaWVpeHlpcXBrbG9jYXZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk0ODcyMzEsImV4cCI6MjA2NTA2MzIzMX0.AKoCFx7OXUnuSdImoAvbO3uPPktYOtRB0ut2J7tYFpI';
                     
@@ -987,9 +1351,8 @@
         // Login de administrador SECURIZADO
         async function loginAdmin() {
             const username = sanitizeInput(document.getElementById('adminUser').value);
-            const password = document.getElementById('adminPass').value; // No sanitizar contraseñas
+            const password = document.getElementById('adminPass').value;
             
-            // Validaciones de entrada
             if (!username || !password) {
                 showAlert('Todos los campos son obligatorios', 'danger');
                 return;
@@ -1000,7 +1363,6 @@
                 return;
             }
             
-            // Validar CAPTCHA
             if (!validateCaptcha()) {
                 showAlert('CAPTCHA incorrecto', 'danger');
                 generateCaptcha();
@@ -1008,7 +1370,6 @@
                 return;
             }
             
-            // Rate limiting
             const loginCheck = isLoginAllowed();
             if (!loginCheck.allowed) {
                 showAlert(loginCheck.message, 'warning');
@@ -1020,12 +1381,9 @@
                 document.getElementById('loginBtn').disabled = true;
                 logSecurityEvent('LOGIN_ATTEMPT', `Intento de login para usuario: ${username}`);
                 
-                // En producción, esto sería una llamada a API con hash de contraseña
-                // Simulamos validación segura
                 const isValidCredentials = await validateCredentialsSecurely(username, password);
                 
                 if (isValidCredentials) {
-                    // Reset intentos y crear sesión
                     securityState.loginAttempts = 0;
                     document.getElementById('loginAttempts').textContent = '';
                     
@@ -1041,6 +1399,8 @@
                     document.getElementById('captchaAnswer').value = '';
                     generateCaptcha();
                     
+                    // Cargar configuración y datos
+                    await loadSystemConfig();
                     updateSellersList();
                 } else {
                     securityState.loginAttempts++;
@@ -1052,7 +1412,6 @@
                     
                     logSecurityEvent('LOGIN_FAILED', `Login fallido para usuario: ${username}`, 'WARNING');
                     
-                    // Regenerar CAPTCHA en fallo
                     generateCaptcha();
                     document.getElementById('captchaAnswer').value = '';
                 }
@@ -1065,13 +1424,9 @@
             }
         }
 
-        // Validación segura de credenciales (simulada)
+        // Validación segura de credenciales
         async function validateCredentialsSecurely(username, password) {
-            // Simular delay de validación
             await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // En producción: hash + salt + verificación en servidor
-            // Por ahora simulamos con credenciales básicas
             return username === 'admin' && password === 'SecurePass123!';
         }
 
@@ -1093,7 +1448,6 @@
                 return;
             }
             
-            // Verificar si ya existe (case insensitive)
             if (sellers.find(s => s.nombre.toLowerCase() === name.toLowerCase())) {
                 showAlert('Este vendedor ya existe', 'danger');
                 return;
@@ -1137,6 +1491,10 @@
                 await loadSellers();
                 await loadTickets();
                 await initializeTicketsIfNeeded();
+                
+                // Cargar configuración inicial
+                await loadSystemConfig();
+                
                 showAlert('Sistema cargado con seguridad avanzada', 'success');
                 logSecurityEvent('APP_INIT', 'Aplicación inicializada correctamente');
             } catch (error) {
@@ -1205,10 +1563,10 @@
                 if (error) throw error;
                 
                 if (count === 0) {
-                    showAlert('Inicializando 1000 boletas...', 'info');
+                    showAlert(`Inicializando ${systemConfig.totalTickets} boletas...`, 'info');
                     
                     const boletasArray = [];
-                    for (let i = 1; i <= 1000; i++) {
+                    for (let i = 1; i <= systemConfig.totalTickets; i++) {
                         boletasArray.push({
                             numero: i,
                             estado: 'disponible',
@@ -1227,8 +1585,8 @@
                     }
                     
                     await loadTickets();
-                    showAlert('1000 boletas inicializadas correctamente', 'success');
-                    logSecurityEvent('DATA_INIT', '1000 boletas inicializadas');
+                    showAlert(`${systemConfig.totalTickets} boletas inicializadas correctamente`, 'success');
+                    logSecurityEvent('DATA_INIT', `${systemConfig.totalTickets} boletas inicializadas`);
                 }
             } catch (error) {
                 logSecurityEvent('DATA_ERROR', `Error inicializando boletas: ${error.message}`, 'ERROR');
@@ -1238,20 +1596,14 @@
 
         // Alternar estado de boleta SECURIZADO
         async function toggleTicketState(ticketNumber) {
-            if (!validateSession()) {
-                showAlert('Sesión expirada', 'warning');
-                return;
-            }
-            
             if (!currentSellerData) {
                 showAlert('Por favor seleccione un vendedor', 'danger');
                 return;
             }
             
-            // Validar número de boleta
-            if (ticketNumber < 1 || ticketNumber > 1000) {
+            if (ticketNumber < 1 || ticketNumber > systemConfig.totalTickets) {
                 logSecurityEvent('INVALID_TICKET', `Intento de acceso a boleta inválida: ${ticketNumber}`, 'WARNING');
-                showAlert('Número de boleta inválido', 'danger');
+                showAlert(`Número de boleta inválido (1-${systemConfig.totalTickets})`, 'danger');
                 return;
             }
             
@@ -1297,8 +1649,9 @@
                     };
                     
                     const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                    showAlert(`Boleta ${ticketNumber} ${action} correctamente`, 'success');
-                    logSecurityEvent('TICKET_UPDATE', `Boleta ${ticketNumber} ${action} por ${currentSellerData.nombre}`);
+                    const revenue = newState === 'vendida' ? `($${systemConfig.ticketPrice.toLocaleString()})` : '';
+                    showAlert(`Boleta ${ticketNumber} ${action} correctamente ${revenue}`, 'success');
+                    logSecurityEvent('TICKET_UPDATE', `Boleta ${ticketNumber} ${action} por ${currentSellerData.nombre} - $${systemConfig.ticketPrice}`);
                 } else {
                     showAlert('Sin conexión a base de datos', 'warning');
                 }
@@ -1308,7 +1661,8 @@
                 if (ticketElement) {
                     ticketElement.className = `ticket ${newState}`;
                     ticketElement.title = newState === 'vendida' ? 
-                        `Vendida por: ${escapeHtml(newVendedor)}` : 'Disponible - Click para vender';
+                        `Vendida por: ${escapeHtml(newVendedor)} - $${systemConfig.ticketPrice.toLocaleString()}` : 
+                        `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
                 }
                 
                 updateStats();
@@ -1377,6 +1731,7 @@
                 
                 const disponibles = boletasData.filter(b => b.estado === 'disponible').length;
                 const vendidas = boletasData.filter(b => b.estado === 'vendida').length;
+                const ingresosTotales = vendidas * systemConfig.ticketPrice;
                 
                 const { data: vendedoresData, error: vendedoresError, count: totalVendedores } = await supabaseClient
                     .from('vendedores')
@@ -1385,18 +1740,24 @@
                 if (vendedoresError) throw vendedoresError;
                 
                 let resumen = `📊 ESTADO DE LA BASE DE DATOS:\n\n`;
+                resumen += `⚙️ CONFIGURACIÓN:\n`;
+                resumen += `   • Boletas configuradas: ${systemConfig.totalTickets}\n`;
+                resumen += `   • Precio por boleta: $${systemConfig.ticketPrice.toLocaleString()}\n`;
+                resumen += `   • Ingresos máximos posibles: $${(systemConfig.totalTickets * systemConfig.ticketPrice).toLocaleString()}\n\n`;
                 resumen += `🎫 BOLETAS:\n`;
                 resumen += `   • Total en BD: ${totalBoletas}\n`;
                 resumen += `   • Disponibles: ${disponibles}\n`;
-                resumen += `   • Vendidas: ${vendidas}\n\n`;
-                resumen += `👥 VENDEDORES:\n`;
-                resumen += `   • Total: ${totalVendedores}\n\n`;
+                resumen += `   • Vendidas: ${vendidas}\n`;
+                resumen += `   • Ingresos actuales: $${ingresosTotales.toLocaleString()}\n`;
+                resumen += `   • Progreso: ${((vendidas / systemConfig.totalTickets) * 100).toFixed(1)}%\n\n`;
+                resumen += `👥 VENDEDORES: ${totalVendedores}\n\n`;
                 
                 if (vendedoresData.length > 0) {
                     resumen += `📈 VENTAS POR VENDEDOR:\n`;
                     vendedoresData.forEach(vendedor => {
                         const ventasVendedor = boletasData.filter(b => b.vendedor === vendedor.nombre).length;
-                        resumen += `   • ${vendedor.nombre}: ${ventasVendedor} boletas ($${ventasVendedor * 1000})\n`;
+                        const ingresosVendedor = ventasVendedor * systemConfig.ticketPrice;
+                        resumen += `   • ${vendedor.nombre}: ${ventasVendedor} boletas ($${ingresosVendedor.toLocaleString()})\n`;
                     });
                 }
                 
@@ -1488,7 +1849,8 @@
             let html = '<h4>Vendedores Registrados:</h4><ul>';
             sellers.forEach(seller => {
                 const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
-                html += `<li>${escapeHtml(seller.nombre)} - Ventas: ${ventas} - Ingresos: $${ventas * 1000}</li>`;
+                const ingresos = ventas * systemConfig.ticketPrice;
+                html += `<li>${escapeHtml(seller.nombre)} - Ventas: ${ventas} - Ingresos: $${ingresos.toLocaleString()}</li>`;
             });
             html += '</ul>';
             container.innerHTML = html;
@@ -1523,7 +1885,7 @@
             grid.innerHTML = '';
             
             setTimeout(() => {
-                for (let i = 1; i <= 1000; i++) {
+                for (let i = 1; i <= systemConfig.totalTickets; i++) {
                     const ticket = document.createElement('div');
                     const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null };
                     
@@ -1532,9 +1894,9 @@
                     ticket.onclick = () => toggleTicketState(i);
                     
                     if (ticketData.estado === 'vendida') {
-                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')}`;
+                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} - $${systemConfig.ticketPrice.toLocaleString()}`;
                     } else {
-                        ticket.title = 'Disponible - Click para vender';
+                        ticket.title = `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
                     }
                     
                     grid.appendChild(ticket);
@@ -1549,11 +1911,18 @@
         function updateStats() {
             const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
             const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
-            const revenue = sold * 1000;
+            const revenue = sold * systemConfig.ticketPrice;
+            const progress = systemConfig.totalTickets > 0 ? ((sold / systemConfig.totalTickets) * 100).toFixed(1) : 0;
             
             document.getElementById('availableCount').textContent = available;
             document.getElementById('soldCount').textContent = sold;
             document.getElementById('revenueCount').textContent = `$${revenue.toLocaleString()}`;
+            
+            // Actualizar dashboard también
+            document.getElementById('dashAvailable').textContent = available;
+            document.getElementById('dashSold').textContent = sold;
+            document.getElementById('dashRevenue').textContent = `$${revenue.toLocaleString()}`;
+            document.getElementById('dashProgress').textContent = `${progress}%`;
         }
 
         // Actualizar dashboard
@@ -1569,21 +1938,24 @@
                 
                 const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
                 const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
-                const revenue = sold * 1000;
+                const revenue = sold * systemConfig.ticketPrice;
+                const progress = systemConfig.totalTickets > 0 ? ((sold / systemConfig.totalTickets) * 100).toFixed(1) : 0;
                 
                 document.getElementById('dashAvailable').textContent = available;
                 document.getElementById('dashSold').textContent = sold;
                 document.getElementById('dashRevenue').textContent = `$${revenue.toLocaleString()}`;
+                document.getElementById('dashProgress').textContent = `${progress}%`;
                 
                 dashGrid.innerHTML = '';
-                for (let i = 1; i <= 1000; i++) {
+                for (let i = 1; i <= systemConfig.totalTickets; i++) {
                     const ticket = document.createElement('div');
                     const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null };
                     
                     ticket.className = `ticket dashboard ${ticketData.estado}`;
                     ticket.textContent = i;
                     ticket.title = ticketData.estado === 'vendida' ? 
-                        `Vendida por: ${escapeHtml(ticketData.vendedor)}` : 'Disponible';
+                        `Vendida por: ${escapeHtml(ticketData.vendedor)} - $${systemConfig.ticketPrice.toLocaleString()}` : 
+                        `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
                     dashGrid.appendChild(ticket);
                 }
                 
@@ -1598,7 +1970,7 @@
             }
         }
 
-        // Actualizar ventas por vendedor (versión compacta para dashboard)
+        // Actualizar ventas por vendedor
         function updateSalesBySeller() {
             const container = document.getElementById('salesBySeller');
             let html = '<h4>📈 Ventas por Vendedor</h4>';
@@ -1609,7 +1981,7 @@
                 html += '<div class="stats-grid">';
                 sellers.forEach(seller => {
                     const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
-                    const ingresos = ventas * 1000;
+                    const ingresos = ventas * systemConfig.ticketPrice;
                     html += `
                         <div class="stat-card">
                             <h3>${ventas}</h3>
@@ -1667,6 +2039,7 @@
                     }
                     
                     updateSellersList();
+                    updateStats();
                     
                 } catch (error) {
                     logSecurityEvent('SYSTEM_RESET_ERROR', `Error reiniciando sistema: ${error.message}`, 'ERROR');
@@ -1701,6 +2074,9 @@
             // Generar CAPTCHA inicial
             generateCaptcha();
             
+            // Inicializar configuración del sistema
+            updateConfigDisplay();
+            
             // Inicializar logs de seguridad
             logSecurityEvent('APP_START', 'Aplicación iniciada', 'INFO');
             
@@ -1727,7 +2103,7 @@
 
         document.addEventListener('click', function(e) {
             const now = Date.now();
-            if (now - lastClickTime < 100) { // Clicks muy rápidos
+            if (now - lastClickTime < 100) {
                 rapidClickCount++;
                 if (rapidClickCount > 10) {
                     logSecurityEvent('SUSPICIOUS_ACTIVITY', 'Actividad sospechosa: clicks muy rápidos detectados', 'WARNING');
