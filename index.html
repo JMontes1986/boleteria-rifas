@@ -1006,7 +1006,8 @@
                             estado: 'disponible',
                             vendedor: null,
                             fecha: null,
-                            comprador: null
+                            comprador: null,
+                            celular: null
                         });
                     }
 
@@ -1028,8 +1029,9 @@
                         numero: i,
                         estado: 'disponible',
                         vendedor: null,
-                         fecha: null,
-                        comprador: null
+                        fecha: null,
+                        comprador: null,
+                        celular: null
                     };
                 }
 
@@ -1543,12 +1545,13 @@
                 tickets = {};
                 if (data) {
                     data.forEach(ticket => {
-                        tickets[ticket.numero] = {
+                         tickets[ticket.numero] = {
                             numero: ticket.numero,
                             estado: ticket.estado,
                             vendedor: ticket.vendedor,
                             fecha: ticket.fecha,
-                            comprador: ticket.comprador || null
+                            comprador: ticket.comprador || null,
+                            celular: ticket.celular || null
                         };
                     });
                 }
@@ -1580,7 +1583,8 @@
                             estado: 'disponible',
                             vendedor: null,
                             fecha: null,
-                            comprador: null
+                            comprador: null,
+                            celular: null
                         });
                     }
                     
@@ -1620,11 +1624,12 @@
                 numero: ticketNumber,
                 estado: 'disponible',
                 vendedor: null,
-                comprador: null
+                comprador: null,
+                celular: null
             };
             
             try {
-                let newState, newVendedor, newFecha, newComprador;
+                let newState, newVendedor, newFecha, newComprador, newCelular;
                 
                 if (currentTicket.estado === 'disponible') {
                     const buyerName = prompt('Nombre del comprador');
@@ -1633,15 +1638,26 @@
                         showAlert('Debe ingresar el nombre del comprador', 'warning');
                         return;
                     }
+                    const areaCode = sanitizeInput(prompt('Código de área', '+57') || '+57').replace(/[^\d+]/g, '');
+                    const phoneNumber = sanitizeInput(prompt('Número de celular') || '');
+                    const sanitizedPhone = phoneNumber.replace(/\D/g, '');
+                    if (!sanitizedPhone) {
+                        showAlert('Debe ingresar el número de celular', 'warning');
+                        return;
+                    }
+                    const finalArea = areaCode.startsWith('+') ? areaCode : '+' + areaCode;
                     newState = 'vendida';
                     newVendedor = sanitizeInput(currentSellerData.nombre);
                     newFecha = new Date().toISOString();
                     newComprador = sanitizedBuyer;
+                    newCelular = finalArea + sanitizedPhone;
                 } else {
                     newState = 'disponible';
                     newVendedor = null;
                     newFecha = null;
                     newComprador = null;
+                    newComprador = null;
+                    newCelular = null;
                 }
                 
                 if (supabaseClient) {
@@ -1652,7 +1668,8 @@
                             estado: newState,
                             vendedor: newVendedor,
                             fecha: newFecha,
-                            comprador: newComprador
+                            comprador: newComprador,
+                            celular: newCelular
                         }, {
                             onConflict: 'numero'
                         })
@@ -1665,7 +1682,8 @@
                         estado: newState,
                         vendedor: newVendedor,
                         fecha: newFecha,
-                        comprador: newComprador
+                        comprador: newComprador,
+                        celular: newCelular
                     };
                     
                     const action = newState === 'vendida' ? 'vendida' : 'liberada';
@@ -1681,7 +1699,7 @@
                 if (ticketElement) {
                     ticketElement.className = `ticket ${newState}`;
                     ticketElement.title = newState === 'vendida' ?
-                        `Vendida por: ${escapeHtml(newVendedor)} | Comprador: ${escapeHtml(newComprador)} | Fecha: ${new Date(newFecha).toLocaleString()}` : 
+                        `Vendida por: ${escapeHtml(newVendedor)} | Comprador: ${escapeHtml(newComprador)} | Cel: ${escapeHtml(newCelular)} | Fecha: ${new Date(newFecha).toLocaleString()}` :
                         `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
                 }
                 
@@ -1907,7 +1925,7 @@
             setTimeout(() => {
                 for (let i = 1; i <= systemConfig.totalTickets; i++) {
                     const ticket = document.createElement('div');
-                    const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null, comprador: null, fecha: null };
+                    const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null, comprador: null, celular: null, fecha: null };
                     
                     ticket.className = `ticket ${ticketData.estado}`;
                     ticket.textContent = i;
@@ -1915,7 +1933,7 @@
                     
                     if (ticketData.estado === 'vendida') {
                        const dateStr = ticketData.fecha ? new Date(ticketData.fecha).toLocaleString() : '';
-                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} | Comprador: ${escapeHtml(ticketData.comprador || 'N/A')} | Fecha: ${dateStr}`;
+                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} | Comprador: ${escapeHtml(ticketData.comprador || 'N/A')} | Cel: ${escapeHtml(ticketData.celular || 'N/A')} | Fecha: ${dateStr}`;
                     } else {
                         ticket.title = `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
                     }
@@ -1969,14 +1987,12 @@
                 
                 dashGrid.innerHTML = '';
                 for (let i = 1; i <= systemConfig.totalTickets; i++) {
-                    const ticket = document.createElement('div');
-                    const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null, comprador: null, fecha: null };
-                    
-                    ticket.className = `ticket dashboard ${ticketData.estado}`;
-                    ticket.textContent = i;
                      if (ticketData.estado === 'vendida') {
                         const dateStr = ticketData.fecha ? new Date(ticketData.fecha).toLocaleString() : '';
-                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor)} | Comprador: ${escapeHtml(ticketData.comprador || 'N/A')} | Fecha: ${dateStr}`;
+                        const seller = ticketData.vendedor || 'Desconocido';
+                        const buyer = ticketData.comprador || 'N/A';
+                        const phone = ticketData.celular || 'N/A';
+                        ticket.title = `Vendida por: ${escapeHtml(seller)} | Comprador: ${escapeHtml(buyer)} | Cel: ${escapeHtml(phone)} | Fecha: ${dateStr}`;
                     } else {
                         ticket.title = `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
                     }
@@ -2026,8 +2042,9 @@
             if (!ticket) return;
             const vendedor = ticket.vendedor || 'Desconocido';
             const comprador = ticket.comprador || 'N/A';
+            const celular = ticket.celular || 'N/A';
             const fecha = ticket.fecha ? new Date(ticket.fecha).toLocaleString() : 'N/A';
-            alert(`Boleta #${numero}\nVendedor: ${vendedor}\nComprador: ${comprador}\nFecha: ${fecha}`);
+            alert(`Boleta #${numero}\nVendedor: ${vendedor}\nComprador: ${comprador}\nCel: ${celular}\nFecha: ${fecha}`);
         }
 
         // Reiniciar sistema SECURIZADO
