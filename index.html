@@ -1931,6 +1931,12 @@
                     ticket.textContent = i;
                     ticket.onclick = () => toggleTicketState(i);
                     
+                    const ticket = document.createElement('div');
+                    const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null, comprador: null, celular: null, fecha: null };
+
+                    ticket.className = `ticket ${ticketData.estado}`;
+                    ticket.textContent = i;
+
                     if (ticketData.estado === 'vendida') {
                        const dateStr = ticketData.fecha ? new Date(ticketData.fecha).toLocaleString() : '';
                         ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} | Comprador: ${escapeHtml(ticketData.comprador || 'N/A')} | Cel: ${escapeHtml(ticketData.celular || 'N/A')} | Fecha: ${dateStr}`;
@@ -1996,6 +2002,7 @@
                     } else {
                         ticket.title = `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
                     }
+                    
                     ticket.onclick = () => showTicketInfo(i);
                     dashGrid.appendChild(ticket);
                 }
