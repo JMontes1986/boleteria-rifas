@@ -321,6 +321,18 @@
             background: #dc3545;
             color: white;
         }
+        
+        .ticket.reservada {
+            background: #ffc107;
+            color: #212529;
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 rgba(255, 193, 7, 0.7); }
+            50% { box-shadow: 0 0 12px rgba(255, 193, 7, 0.9); }
+            100% { box-shadow: 0 0 0 rgba(255, 193, 7, 0.7); }
+        }
 
         .ticket:hover {
             transform: scale(1.1);
@@ -726,6 +738,19 @@
                         <label>Nombre del Vendedor:</label>
                         <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor" maxlength="100">
                     </div>
+
+                     <div class="form-group">
+                        <label>Contraseña Temporal:</label>
+                        <input type="password" id="sellerPassword" placeholder="Contraseña para el vendedor" maxlength="100">
+                        <small style="color: #666; font-size: 0.8em;">Debe tener al menos 6 caracteres.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirmar Contraseña:</label>
+                        <input type="password" id="sellerPasswordConfirm" placeholder="Repite la contraseña" maxlength="100">
+                    </div>
+
+                    <p style="font-size: 0.85em; color: #555;">El usuario se generará automáticamente con el nombre del vendedor en minúsculas y sin espacios.</p>
                     
                     <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
                     <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
@@ -739,14 +764,34 @@
 
         <!-- Pestaña Vendedor -->
         <div id="seller" class="tab-content">
-            <div class="form-group">
-                <label>Seleccionar Vendedor:</label>
-                <select id="currentSeller">
-                    <option value="">Cargando vendedores...</option>
-                </select>
+            <div id="vendorLogin" class="admin-section" style="margin-bottom: 20px;">
+                <h3>🛒 Acceso de Vendedores</h3>
+                <p>Inicia sesión con tu usuario (solo letras) y contraseña para vender boletas en tiempo real.</p>
+                <div class="form-group">
+                    <label>Usuario del vendedor:</label>
+                    <input type="text" id="vendorUsername" placeholder="Ej: juanperez" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="vendorPassword" placeholder="Ingresa tu contraseña" maxlength="100">
+                </div>
+                <button class="btn btn-primary" id="vendorLoginBtn" onclick="loginVendor()">Iniciar Sesión</button>
+                <div id="vendorLoginMessage" style="margin-top: 10px; color: #dc3545;"></div>
             </div>
 
             <div id="sellerPanel" style="display: none;">
+                <div class="admin-section" style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 id="sellerWelcome">Bienvenido</h3>
+                            <p style="margin-top: 5px; color: #555;">Selecciona una boleta disponible para iniciar el proceso de venta.</p>
+                        </div>
+                        <button class="btn btn-danger" onclick="logoutVendor()" id="vendorLogoutBtn">Cerrar Sesión</button>
+                    </div>
+                    <div id="sellerReservationNotice" style="margin-top: 10px; color: #856404; display: none; background: #fff3cd; padding: 10px; border-radius: 8px;">
+                        Existen boletas reservadas por ti que fueron liberadas automáticamente al cerrar tu sesión anterior.
+                    </div>
+                </div>
                 <div class="stats-grid">
                     <div class="stat-card">
                         <h3 id="availableCount">-</h3>
@@ -764,7 +809,7 @@
 
                 <div class="tickets-section">
                     <h4>Boletas (Click para vender/liberar)</h4>
-                    <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Precio: $<span id="currentPriceDisplay">1,000</span> c/u</small></p>
+                    <p><small>🟢 Verde = Disponible | 🟡 Amarillo = En proceso | 🔴 Rojo = Vendida | Precio: $<span id="currentPriceDisplay">1,000</span> c/u</small</p>
                     <div id="ticketGridLoading" class="loading">
                         <div class="spinner"></div>
                         Cargando boletas...
@@ -804,7 +849,7 @@
             <!-- Grid de boletas más prominente -->
             <div class="tickets-section dashboard">
                 <h4>🎫 Estado de Todas las Boletas</h4>
-                <p><small>🟢 Verde = Disponible | 🔴 Rojo = Vendida | Total: <span id="dashTotalTickets">1000</span> boletas</small></p>
+                 <p><small>🟢 Verde = Disponible | 🟡 Amarillo = En proceso | 🔴 Rojo = Vendida | Total: <span id="dashTotalTickets">1000</span> boletas</small</p>
                 <div id="dashboardLoading" class="loading">
                     <div class="spinner"></div>
                     Cargando dashboard...
@@ -902,6 +947,9 @@
         let sellers = [];
         let currentSellerData = null;
         let captchaSolution = 0;
+        let vendorSession = { isAuthenticated: false, seller: null };
+        let realtimeInitialized = false;
+        let realtimeChannels = [];
 
         const AREA_CODES = [
             { code: '+1', country: 'Estados Unidos / Canadá' },
@@ -1412,6 +1460,26 @@
                 .substring(0, 1000); // Limitar longitud
         }
 
+        function normalizeVendorUsername(input) {
+            return sanitizeInput(input)
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '')
+                .substring(0, SECURE_CONFIG.MAX_USERNAME_LENGTH);
+        }
+
+        async function hashPassword(password) {
+            if (!password) return '';
+            if (!window.crypto || !window.crypto.subtle) {
+                throw new Error('El navegador no soporta hashing seguro.');
+            }
+
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
         // Escape HTML para prevenir XSS
         function escapeHtml(unsafe) {
             if (typeof unsafe !== 'string') {
@@ -1771,6 +1839,9 @@
             }
             
             const name = sanitizeInput(document.getElementById('sellerName').value);
+            const password = document.getElementById('sellerPassword').value;
+            const confirmPassword = document.getElementById('sellerPasswordConfirm').value;
+            
             if (!name) {
                 showAlert('Por favor ingrese un nombre válido', 'danger');
                 return;
@@ -1780,9 +1851,30 @@
                 showAlert('Nombre demasiado largo', 'danger');
                 return;
             }
+
+            const username = normalizeVendorUsername(name);
+            if (!username) {
+                showAlert('No se pudo generar un usuario válido. Use solo letras y números.', 'danger');
+                return;
+            }
+
+            if (!password || password.length < 6) {
+                showAlert('La contraseña debe tener al menos 6 caracteres', 'danger');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAlert('Las contraseñas no coinciden', 'danger');
+                return;
+            }
             
             if (sellers.find(s => s.nombre.toLowerCase() === name.toLowerCase())) {
                 showAlert('Este vendedor ya existe', 'danger');
+                return;
+            }
+            
+            if (sellers.find(s => s.username === username)) {
+                showAlert('El usuario generado ya está en uso. Modifique el nombre.', 'danger');
                 return;
             }
             
@@ -1790,17 +1882,20 @@
                 document.getElementById('addSellerBtn').disabled = true;
                 
                 if (supabaseClient) {
+                    const passwordHash = await hashPassword(password);
                     const { data, error } = await supabaseClient
                         .from('vendedores')
-                        .insert([{ nombre: name }])
+                        .insert([{ nombre: name, username, password_hash: passwordHash }])
                         .select();
                     
                     if (error) throw error;
                     
                     document.getElementById('sellerName').value = '';
+                    document.getElementById('sellerPassword').value = '';
+                    document.getElementById('sellerPasswordConfirm').value = '';
                     await loadSellers();
-                    showAlert(`Vendedor "${escapeHtml(name)}" agregado correctamente`, 'success');
-                    logSecurityEvent('SELLER_ADDED', `Vendedor agregado: ${name}`);
+                    showAlert(`Vendedor "${escapeHtml(name)}" agregado correctamente. Usuario: ${escapeHtml(username)}`, 'success');
+                    logSecurityEvent('SELLER_ADDED', `Vendedor agregado: ${name} (usuario: ${username})`);
                 } else {
                     showAlert('Sin conexión a base de datos', 'warning');
                 }
@@ -1813,6 +1908,220 @@
             }
         }
 
+        function setVendorLoginMessage(message, type = 'danger') {
+            const el = document.getElementById('vendorLoginMessage');
+            if (!el) return;
+            let color = '#dc3545';
+            if (type === 'success') {
+                color = '#28a745';
+            } else if (type === 'info') {
+                color = '#0d6efd';
+            }
+            el.style.color = color;
+            el.textContent = message || '';
+        }
+
+        function updateVendorUI() {
+            const loginSection = document.getElementById('vendorLogin');
+            const panel = document.getElementById('sellerPanel');
+            const welcome = document.getElementById('sellerWelcome');
+            const notice = document.getElementById('sellerReservationNotice');
+
+            if (vendorSession.isAuthenticated && panel && loginSection) {
+                loginSection.style.display = 'none';
+                panel.style.display = 'block';
+                if (welcome && vendorSession.seller) {
+                    welcome.textContent = `Bienvenido ${vendorSession.seller.nombre}`;
+                }
+                if (notice) {
+                    notice.style.display = 'none';
+                }
+            } else {
+                if (loginSection) loginSection.style.display = 'block';
+                if (panel) panel.style.display = 'none';
+                if (welcome) welcome.textContent = 'Bienvenido';
+                setVendorLoginMessage('');
+            }
+        }
+
+        async function releaseVendorReservations(vendorName, { silent = false } = {}) {
+            if (!supabaseClient || !vendorName) return 0;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('boletas')
+                    .update({
+                        estado: 'disponible',
+                        vendedor: null,
+                        fecha: null,
+                        comprador: null,
+                        celular: null
+                    })
+                    .eq('estado', 'reservada')
+                    .eq('vendedor', vendorName)
+                    .select('numero');
+
+                if (error) throw error;
+
+                const released = data ? data.length : 0;
+                if (released > 0) {
+                    logSecurityEvent('RESERVATION_RELEASE', `Reservas liberadas automáticamente para ${vendorName}: ${released}`);
+                    if (!silent) {
+                        showAlert(`Se liberaron ${released} boletas en proceso del vendedor ${vendorName}`, 'info');
+                    }
+                }
+
+                return released;
+            } catch (error) {
+                if (!silent) {
+                    showAlert('Error liberando reservas: ' + error.message, 'danger');
+                }
+                logSecurityEvent('RESERVATION_RELEASE_ERROR', `Error liberando reservas para ${vendorName}: ${error.message}`, 'ERROR');
+                return 0;
+            }
+        }
+
+        async function releaseReservation(ticketNumber, { silent = false } = {}) {
+            if (!supabaseClient || !currentSellerData) return 0;
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('boletas')
+                    .update({
+                        estado: 'disponible',
+                        vendedor: null,
+                        fecha: null,
+                        comprador: null,
+                        celular: null
+                    })
+                    .eq('numero', ticketNumber)
+                    .eq('estado', 'reservada')
+                    .eq('vendedor', currentSellerData.nombre)
+                    .select();
+
+                if (error) throw error;
+
+                const released = data ? data.length : 0;
+                if (released > 0) {
+                    tickets[ticketNumber] = {
+                        numero: ticketNumber,
+                        estado: 'disponible',
+                        vendedor: null,
+                        comprador: null,
+                        celular: null,
+                        fecha: null
+                    };
+                    updateTicketElements(ticketNumber);
+                    updateStats();
+                    updateSellersList();
+                    if (!silent) {
+                        showAlert(`Reserva de la boleta ${ticketNumber} liberada.`, 'info');
+                    }
+                    logSecurityEvent('TICKET_RESERVATION_CANCEL', `Reserva cancelada para boleta ${ticketNumber} por ${currentSellerData.nombre}`);
+                }
+
+                return released;
+            } catch (error) {
+                if (!silent) {
+                    showAlert('Error liberando reserva: ' + error.message, 'danger');
+                }
+                logSecurityEvent('TICKET_RESERVATION_CANCEL_ERROR', `Error cancelando reserva ${ticketNumber}: ${error.message}`, 'ERROR');
+                return 0;
+            }
+        }
+
+        async function loginVendor() {
+            if (!supabaseClient) {
+                setVendorLoginMessage('Sistema desconectado. Intente más tarde.');
+                return;
+            }
+
+            const usernameInput = document.getElementById('vendorUsername');
+            const passwordInput = document.getElementById('vendorPassword');
+            const username = normalizeVendorUsername(usernameInput.value);
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                setVendorLoginMessage('Ingrese usuario y contraseña válidos.');
+                return;
+            }
+
+            try {
+                document.getElementById('vendorLoginBtn').disabled = true;
+                setVendorLoginMessage('Verificando credenciales...', 'info');
+
+                const hashedPassword = await hashPassword(password);
+                const { data, error } = await supabaseClient
+                    .from('vendedores')
+                    .select('id, nombre, username, password_hash')
+                    .eq('username', username)
+                    .limit(1);
+
+                if (error) throw error;
+
+                const record = Array.isArray(data) ? data[0] : data;
+
+                if (!record || record.password_hash !== hashedPassword) {
+                    setVendorLoginMessage('Usuario o contraseña incorrectos.');
+                    logSecurityEvent('VENDOR_LOGIN_FAILED', `Intento fallido de vendedor: ${username}`, 'WARNING');
+                    return;
+                }
+
+                vendorSession = {
+                    isAuthenticated: true,
+                    seller: { id: record.id, nombre: record.nombre, username: record.username }
+                };
+                currentSellerData = vendorSession.seller;
+
+                usernameInput.value = '';
+                passwordInput.value = '';
+
+                const released = await releaseVendorReservations(record.nombre, { silent: true });
+                updateVendorUI();
+                setVendorLoginMessage('');
+
+                createTicketGrid();
+                updateStats();
+                showAlert(`Sesión iniciada para ${escapeHtml(record.nombre)}.`, 'success');
+                logSecurityEvent('VENDOR_LOGIN', `Vendedor autenticado: ${record.nombre}`);
+
+                if (released > 0) {
+                    const notice = document.getElementById('sellerReservationNotice');
+                    if (notice) {
+                        notice.textContent = `Se liberaron ${released} boletas que estaban en proceso en otra sesión.`;
+                        notice.style.display = 'block';
+                    }
+                }
+
+                await loadTickets();
+            } catch (error) {
+                setVendorLoginMessage('Error autenticando vendedor: ' + error.message);
+                logSecurityEvent('VENDOR_LOGIN_ERROR', `Error autenticando vendedor ${username}: ${error.message}`, 'ERROR');
+            } finally {
+                document.getElementById('vendorLoginBtn').disabled = false;
+            }
+        }
+
+        async function logoutVendor() {
+            if (!vendorSession.isAuthenticated) {
+                return;
+            }
+
+            const vendorName = vendorSession.seller ? vendorSession.seller.nombre : null;
+            const released = await releaseVendorReservations(vendorName || '', { silent: true });
+
+            vendorSession = { isAuthenticated: false, seller: null };
+            currentSellerData = null;
+
+            updateVendorUI();
+            showAlert('Sesión de vendedor cerrada correctamente.', 'info');
+            logSecurityEvent('VENDOR_LOGOUT', `Vendedor cerró sesión: ${vendorName || 'desconocido'}`);
+
+            if (released > 0) {
+                showAlert(`Se liberaron ${released} boletas que estaban en proceso.`, 'info');
+            }
+        }
+        
         // =========================
         // FUNCIONES PRINCIPALES
         // =========================
@@ -1827,6 +2136,8 @@
                 
                 // Cargar configuración inicial
                 await loadSystemConfig();
+                
+                setupRealtimeSubscriptions();
                 
                 showAlert('Sistema cargado con seguridad avanzada', 'success');
                 logSecurityEvent('APP_INIT', 'Aplicación inicializada correctamente');
@@ -1844,12 +2155,15 @@
                 
                 const { data, error } = await supabaseClient
                     .from('vendedores')
-                    .select('*')
+                    .select('id, nombre, username')
                     .order('nombre');
                 
                 if (error) throw error;
                 
-                sellers = data || [];
+                sellers = (data || []).map(seller => ({
+                    ...seller,
+                    username: seller.username || normalizeVendorUsername(seller.nombre)
+                }));
                 updateSellerDropdown();
                 updateSellersList();
                 logSecurityEvent('DATA_LOAD', 'Vendedores cargados correctamente');
@@ -1893,6 +2207,58 @@
             }
         }
 
+        function setupRealtimeSubscriptions() {
+            if (!supabaseClient || realtimeInitialized) return;
+            realtimeInitialized = true;
+
+            const ticketsChannel = supabaseClient
+                .channel('realtime-boletas')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'boletas' }, payload => {
+                    const data = payload.new || payload.old;
+                    if (!data) return;
+
+                    if (payload.eventType === 'DELETE') {
+                        tickets[data.numero] = {
+                            numero: data.numero,
+                            estado: 'disponible',
+                            vendedor: null,
+                            comprador: null,
+                            celular: null,
+                            fecha: null
+                        };
+                    } else {
+                        tickets[data.numero] = {
+                            numero: data.numero,
+                            estado: data.estado,
+                            vendedor: data.vendedor,
+                            comprador: data.comprador || null,
+                            celular: data.celular || null,
+                            fecha: data.fecha || null
+                        };
+                    }
+
+                    updateTicketElements(data.numero);
+                    updateStats();
+                    updateSellersList();
+                })
+                .subscribe(status => {
+                    if (status === 'SUBSCRIBED') {
+                        logSecurityEvent('REALTIME_SUBSCRIBED', 'Suscripción en tiempo real a boletas activa');
+                    }
+                });
+
+            realtimeChannels.push(ticketsChannel);
+
+            const sellersChannel = supabaseClient
+                .channel('realtime-vendedores')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'vendedores' }, () => {
+                    loadSellers();
+                })
+                .subscribe();
+
+            realtimeChannels.push(sellersChannel);
+        }
+        
         // Inicializar boletas si no existen
         async function initializeTicketsIfNeeded() {
             try {
@@ -1938,8 +2304,8 @@
 
         // Alternar estado de boleta SECURIZADO
         async function toggleTicketState(ticketNumber) {
-            if (!currentSellerData) {
-                showAlert('Por favor seleccione un vendedor', 'danger');
+           if (!vendorSession.isAuthenticated || !currentSellerData) {
+                showAlert('Inicie sesión como vendedor para gestionar boletas.', 'danger');
                 return;
             }
             
@@ -1949,93 +2315,167 @@
                 return;
             }
             
+            const sellerName = currentSellerData.nombre;
             const currentTicket = tickets[ticketNumber] || {
                 numero: ticketNumber,
                 estado: 'disponible',
                 vendedor: null,
                 comprador: null,
-                celular: null
+                celular: null,
+                fecha: null
             };
+
+            if (currentTicket.estado === 'vendida' && currentTicket.vendedor && currentTicket.vendedor !== sellerName) {
+                showAlert(`La boleta ${ticketNumber} ya fue vendida por ${currentTicket.vendedor}.`, 'warning');
+                return;
+            }
+
+            if (currentTicket.estado === 'reservada' && currentTicket.vendedor && currentTicket.vendedor !== sellerName) {
+                showAlert(`La boleta ${ticketNumber} está en proceso por ${currentTicket.vendedor}.`, 'warning');
+                return;
+            }
+
+            if (!supabaseClient) {
+                showAlert('Sin conexión a base de datos', 'warning');
+                return;
+            }
             
             try {
-                let newState, newVendedor, newFecha, newComprador, newCelular;
-                
-                if (currentTicket.estado === 'disponible') {
-                    const buyerName = prompt('Nombre del comprador');
-                    const sanitizedBuyer = sanitizeInput(buyerName || '');
-                    if (!sanitizedBuyer) {
-                        showAlert('Debe ingresar el nombre del comprador', 'warning');
+                if (currentTicket.estado === 'vendida') {
+                    if (!confirm('¿Desea liberar esta boleta vendida? Esta acción eliminará los datos del comprador.')) {
                         return;
                     }
 
-                    const phoneData = await promptPhoneNumber();
-                    if (!phoneData) return;
-                    const areaCode = sanitizeInput(phoneData.area || '+57').replace(/[^\d+]/g, '');
-                    const phoneNumber = sanitizeInput(phoneData.phone || '');
-                    const sanitizedPhone = phoneNumber.replace(/\D/g, '');
-                    if (!sanitizedPhone) {
-                        showAlert('Debe ingresar el número de celular', 'warning');
+                    const { data: releaseData, error: releaseError } = await supabaseClient
+                        .from('boletas')
+                        .update({
+                            estado: 'disponible',
+                            vendedor: null,
+                            fecha: null,
+                            comprador: null,
+                            celular: null
+                        })
+                        .eq('numero', ticketNumber)
+                        .eq('estado', 'vendida')
+                        .eq('vendedor', sellerName)
+                        .select();
+
+                    if (releaseError) throw releaseError;
+
+                    if (!releaseData || releaseData.length === 0) {
+                        showAlert('No fue posible liberar la boleta. Intente actualizar.', 'warning');
                         return;
                     }
-                    const finalArea = areaCode.startsWith('+') ? areaCode : '+' + areaCode;
-                    newState = 'vendida';
-                    newVendedor = sanitizeInput(currentSellerData.nombre);
-                    newFecha = new Date().toISOString();
-                    newComprador = sanitizedBuyer;
-                    newCelular = finalArea + sanitizedPhone;
-                } else {
-                    newState = 'disponible';
-                    newVendedor = null;
-                    newFecha = null;
-                    newComprador = null;
-                    newCelular = null;
-                }
-                
-                if (supabaseClient) {
-                    const { data, error } = await supabaseClient
-                        .from('boletas')
-                        .upsert({
-                            numero: ticketNumber,
-                            estado: newState,
-                            vendedor: newVendedor,
-                            fecha: newFecha,
-                            comprador: newComprador,
-                            celular: newCelular
-                        }, {
-                            onConflict: 'numero'
-                        })
-                        .select();
-                    
-                    if (error) throw error;
                     
                     tickets[ticketNumber] = {
                         numero: ticketNumber,
-                        estado: newState,
-                        vendedor: newVendedor,
-                        fecha: newFecha,
-                        comprador: newComprador,
-                        celular: newCelular
+                        estado: 'disponible',
+                        vendedor: null,
+                        comprador: null,
+                        celular: null,
+                        fecha: null
                     };
+                    updateTicketElements(ticketNumber);
+                    updateStats();
+                    updateSellersList();
+                    showAlert(`Boleta ${ticketNumber} liberada correctamente`, 'success');
+                    logSecurityEvent('TICKET_RELEASE', `Boleta ${ticketNumber} liberada por ${sellerName}`);
+                    return;
+                }
+                
+                 // Asegurar reserva
+                if (currentTicket.estado !== 'reservada') {
+                    const now = new Date().toISOString();
+                    const { data: reserveData, error: reserveError } = await supabaseClient
+                        .from('boletas')
+                        .update({
+                            estado: 'reservada',
+                            vendedor: sellerName,
+                            fecha: now,
+                            comprador: null,
+                            celular: null
+                        })
+                        .eq('numero', ticketNumber)
+                        .eq('estado', 'disponible')
+                        .select();
                     
-                    const action = newState === 'vendida' ? 'vendida' : 'liberada';
-                    const revenue = newState === 'vendida' ? `($${systemConfig.ticketPrice.toLocaleString()})` : '';
-                    showAlert(`Boleta ${ticketNumber} ${action} correctamente ${revenue}`, 'success');
-                    logSecurityEvent('TICKET_UPDATE', `Boleta ${ticketNumber} ${action} por ${currentSellerData.nombre} - $${systemConfig.ticketPrice}`);
-                } else {
-                    showAlert('Sin conexión a base de datos', 'warning');
+                    if (reserveError) throw reserveError;
+
+                    if (!reserveData || reserveData.length === 0) {
+                        showAlert('La boleta ya no está disponible.', 'warning');
+                        await loadTickets();
+                        return;
+                    }
+                    
+                    tickets[ticketNumber] = {
+                        ...reserveData[0]
+                    };
+                    updateTicketElements(ticketNumber);
+                    logSecurityEvent('TICKET_RESERVE', `Boleta ${ticketNumber} reservada por ${sellerName}`);
                 }
                 
-                // Actualizar visualmente
-                const ticketElement = document.querySelector(`#ticketGrid .ticket:nth-child(${ticketNumber})`);
-                if (ticketElement) {
-                    ticketElement.className = `ticket ${newState}`;
-                    ticketElement.title = newState === 'vendida' ?
-                        `Vendida por: ${escapeHtml(newVendedor)} | Comprador: ${escapeHtml(newComprador)} | Cel: ${escapeHtml(newCelular)} | Fecha: ${new Date(newFecha).toLocaleString()}` :
-                        `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
+                const buyerName = prompt('Nombre del comprador');
+                const sanitizedBuyer = sanitizeInput(buyerName || '');
+                if (!sanitizedBuyer) {
+                    await releaseReservation(ticketNumber, { silent: true });
+                    showAlert('Venta cancelada. La boleta vuelve a estar disponible.', 'info');
+                    return;
                 }
-                
+
+                 const phoneData = await promptPhoneNumber();
+                if (!phoneData) {
+                    await releaseReservation(ticketNumber, { silent: true });
+                    showAlert('Venta cancelada. La boleta vuelve a estar disponible.', 'info');
+                    return;
+                }
+
+                const areaCode = sanitizeInput(phoneData.area || '+57').replace(/[^\d+]/g, '');
+                const phoneNumber = sanitizeInput(phoneData.phone || '');
+                const sanitizedPhone = phoneNumber.replace(/\D/g, '');
+                if (!sanitizedPhone) {
+                    await releaseReservation(ticketNumber, { silent: true });
+                    showAlert('Debe ingresar un número de celular válido.', 'warning');
+                    return;
+                }
+                const finalArea = areaCode.startsWith('+') ? areaCode : '+' + areaCode;
+
+                const salePayload = {
+                    estado: 'vendida',
+                    vendedor: sellerName,
+                    fecha: new Date().toISOString(),
+                    comprador: sanitizedBuyer,
+                    celular: finalArea + sanitizedPhone
+                };
+
+                const { data: saleData, error: saleError } = await supabaseClient
+                    .from('boletas')
+                    .update(salePayload)
+                    .eq('numero', ticketNumber)
+                    .eq('estado', 'reservada')
+                    .eq('vendedor', sellerName)
+                    .select();
+
+                if (saleError) {
+                    await releaseReservation(ticketNumber, { silent: true });
+                    throw saleError;
+                }
+
+                if (!saleData || saleData.length === 0) {
+                    showAlert('No se pudo completar la venta. Intente nuevamente.', 'warning');
+                    await loadTickets();
+                    return;
+                }
+
+                tickets[ticketNumber] = {
+                    ...saleData[0]
+                };
+                updateTicketElements(ticketNumber);
                 updateStats();
                 updateSellersList();
+
+                const revenue = `$${systemConfig.ticketPrice.toLocaleString()}`;
+                showAlert(`Boleta ${ticketNumber} vendida correctamente (${revenue})`, 'success');
+                logSecurityEvent('TICKET_SOLD', `Boleta ${ticketNumber} vendida por ${sellerName} - ${revenue}`);
                 
             } catch (error) {
                 logSecurityEvent('TICKET_ERROR', `Error actualizando boleta ${ticketNumber}: ${error.message}`, 'ERROR');
@@ -2197,12 +2637,13 @@
         // Actualizar dropdown de vendedores
         function updateSellerDropdown() {
             const select = document.getElementById('currentSeller');
+            if (!select) return;
             select.innerHTML = '<option value="">Seleccione un vendedor</option>';
             
             sellers.forEach(seller => {
                 const option = document.createElement('option');
                 option.value = seller.id;
-                option.textContent = escapeHtml(seller.nombre);
+                option.textContent = `${escapeHtml(seller.nombre)} (${escapeHtml(seller.username || '')})`;
                 select.appendChild(option);
             });
         }
@@ -2217,9 +2658,9 @@
             
             let html = '<h4>Vendedores Registrados:</h4><ul>';
             sellers.forEach(seller => {
-                const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
+                const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre && t.estado === 'vendida').length;
                 const ingresos = ventas * systemConfig.ticketPrice;
-                html += `<li>${escapeHtml(seller.nombre)} - Ventas: ${ventas} - Ingresos: $${ingresos.toLocaleString()}</li>`;
+                const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre && t.estado === 'vendida').length;
             });
             html += '</ul>';
             container.innerHTML = html;
@@ -2227,7 +2668,10 @@
 
         // Manejar cambio de vendedor
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('currentSeller').addEventListener('change', function() {
+            updateVendorUI();
+            const select = document.getElementById('currentSeller');
+            if (!select) return;
+            select.addEventListener('change', function() {
                 const sellerId = this.value;
                 if (sellerId) {
                     currentSellerData = sellers.find(s => s.id == sellerId);
@@ -2242,6 +2686,47 @@
             });
         });
 
+        function getTicketTooltip(ticketData) {
+            if (!ticketData) return '';
+
+            if (ticketData.estado === 'vendida') {
+                const dateStr = ticketData.fecha ? new Date(ticketData.fecha).toLocaleString() : '';
+                return `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} | Comprador: ${escapeHtml(ticketData.comprador || 'N/A')} | Cel: ${escapeHtml(ticketData.celular || 'N/A')} | Fecha: ${dateStr}`;
+            }
+
+            if (ticketData.estado === 'reservada') {
+                const dateStr = ticketData.fecha ? new Date(ticketData.fecha).toLocaleTimeString() : '';
+                return `En proceso por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} ${dateStr ? '| Inicio: ' + dateStr : ''}`;
+            }
+
+            return `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
+        }
+
+        function applyTicketVisual(element, ticketData, { isDashboard = false } = {}) {
+            if (!element || !ticketData) return;
+            const baseClass = isDashboard ? 'ticket dashboard' : 'ticket';
+            element.className = `${baseClass} ${ticketData.estado}`.trim();
+            element.textContent = ticketData.numero;
+            element.title = getTicketTooltip(ticketData);
+        }
+
+        function updateTicketElements(ticketNumber) {
+            const data = tickets[ticketNumber] || {
+                numero: ticketNumber,
+                estado: 'disponible',
+                vendedor: null,
+                comprador: null,
+                celular: null,
+                fecha: null
+            };
+
+            const gridElement = document.querySelector(`#ticketGrid .ticket[data-ticket-number="${ticketNumber}"]`);
+            applyTicketVisual(gridElement, data);
+
+            const dashboardElement = document.querySelector(`#dashboardTicketGrid .ticket[data-ticket-number="${ticketNumber}"]`);
+            applyTicketVisual(dashboardElement, data, { isDashboard: true });
+        }
+        
         // Crear grid de boletas
         function createTicketGrid() {
             const grid = document.getElementById('ticketGrid');
@@ -2258,17 +2743,10 @@
                     const ticket = document.createElement('div');
                     const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null, comprador: null, celular: null, fecha: null };
                     
-                    ticket.className = `ticket ${ticketData.estado}`;
-                    ticket.textContent = i;
+                   ticket.dataset.ticketNumber = i;
+                    applyTicketVisual(ticket, ticketData);
                     ticket.onclick = () => toggleTicketState(i);
-                    
-                    if (ticketData.estado === 'vendida') {
-                       const dateStr = ticketData.fecha ? new Date(ticketData.fecha).toLocaleString() : '';
-                        ticket.title = `Vendida por: ${escapeHtml(ticketData.vendedor || 'Desconocido')} | Comprador: ${escapeHtml(ticketData.comprador || 'N/A')} | Cel: ${escapeHtml(ticketData.celular || 'N/A')} | Fecha: ${dateStr}`;
-                    } else {
-                        ticket.title = `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
-                    }
-                    
+                                      
                     grid.appendChild(ticket);
                 }
                 
@@ -2321,17 +2799,8 @@
                     const ticket = document.createElement('div');
                     const ticketData = tickets[i] || { numero: i, estado: 'disponible', vendedor: null, comprador: null, celular: null, fecha: null };
                     
-                    ticket.className = `ticket dashboard ${ticketData.estado}`;
-                    ticket.textContent = i;
-                     if (ticketData.estado === 'vendida') {
-                        const dateStr = ticketData.fecha ? new Date(ticketData.fecha).toLocaleString() : '';
-                        const seller = ticketData.vendedor || 'Desconocido';
-                        const buyer = ticketData.comprador || 'N/A';
-                        const phone = ticketData.celular || 'N/A';
-                        ticket.title = `Vendida por: ${escapeHtml(seller)} | Comprador: ${escapeHtml(buyer)} | Cel: ${escapeHtml(phone)} | Fecha: ${dateStr}`;
-                    } else {
-                        ticket.title = `Disponible - $${systemConfig.ticketPrice.toLocaleString()}`;
-                    }
+                    ticket.dataset.ticketNumber = i;
+                    applyTicketVisual(ticket, ticketData);
                     ticket.onclick = () => showTicketInfo(i);
                     dashGrid.appendChild(ticket);
                 }
@@ -2357,7 +2826,7 @@
             } else {
                 html += '<div class="stats-grid">';
                 sellers.forEach(seller => {
-                    const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre).length;
+                    const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre && t.estado === 'vendida').length;
                     const ingresos = ventas * systemConfig.ticketPrice;
                     html += `
                         <div class="stat-card">
@@ -2380,7 +2849,8 @@
             const comprador = ticket.comprador || 'N/A';
             const celular = ticket.celular || 'N/A';
             const fecha = ticket.fecha ? new Date(ticket.fecha).toLocaleString() : 'N/A';
-            alert(`Boleta #${numero}\nVendedor: ${vendedor}\nComprador: ${comprador}\nCel: ${celular}\nFecha: ${fecha}`);
+            const estado = ticket.estado === 'reservada' ? 'En proceso' : (ticket.estado === 'vendida' ? 'Vendida' : 'Disponible');
+            alert(`Boleta #${numero}\nEstado: ${estado}\nVendedor: ${vendedor}\nComprador: ${comprador}\nCel: ${celular}\nFecha: ${fecha}`);
         }
 
         // Reiniciar sistema SECURIZADO
