@@ -2403,7 +2403,14 @@ document.addEventListener('vendor:error', function(event) {
     updateConnectionStatus('disconnected');
 });
 
-document.addEventListener('DOMContentLoaded', function() {
+let appInitialized = false;
+
+function initializeAppOnce() {
+    if (appInitialized) {
+        return;
+    }
+    appInitialized = true;
+    
     initThemeToggle();
     
     // Generar CAPTCHA inicial
@@ -2426,7 +2433,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Actualizar estadísticas de seguridad cada 5 segundos
     setInterval(updateSecurityStats, 5000);
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeAppOnce);
+} else {
+    initializeAppOnce();
+}
 
 // Manejar errores globales
 window.addEventListener('error', function(e) {
