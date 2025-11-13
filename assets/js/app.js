@@ -574,6 +574,15 @@ function escapeHtml(unsafe) {
         .replace(/'/g, "&#039;");
 }
 
+function formatCurrency(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) {
+        const fallback = Number(value) || 0;
+        return `$${Math.round(fallback).toLocaleString()}`;
+    }
+    return `$${Math.round(amount).toLocaleString()}`;
+}
+
 // Poblar lista de códigos de área
 function populateAreaCodes() {
     const list = document.getElementById('areaCodeList');
@@ -1232,6 +1241,7 @@ async function logoutVendor() {
     currentSellerData = null;
 
     updateVendorUI();
+    clearTicketForm();
     showAlert('Sesión de vendedor cerrada correctamente.', 'info');
     logSecurityEvent('VENDOR_LOGOUT', `Vendedor cerró sesión: ${vendorName || 'desconocido'}`);
 
@@ -1421,8 +1431,10 @@ async function initializeTicketsIfNeeded() {
 }
 
 // Alternar estado de boleta SECURIZADO
-async function toggleTicketState(ticketNumber) {
-   if (!vendorSession.isAuthenticated || !currentSellerData) {
+async function toggleTicketState(ticketNumber, options = {}) {
+    const { buyerName, buyerPhone, saleValue, fromForm = false } = options;
+
+    if (!vendorSession.isAuthenticated || !currentSellerData) {
         showAlert('Inicie sesión como vendedor para gestionar boletas.', 'danger');
         return;
     }
@@ -1532,37 +1544,69 @@ async function toggleTicketState(ticketNumber) {
             logSecurityEvent('TICKET_RESERVE', `Boleta ${ticketNumber} reservada por ${sellerName}`);
         }
 
-        const buyerName = prompt('Nombre del comprador');
-        const sanitizedBuyer = sanitizeInput(buyerName || '');
-        if (!sanitizedBuyer) {
-            await releaseReservation(ticketNumber, { silent: true });
-            showAlert('Venta cancelada. La boleta vuelve a estar disponible.', 'info');
-            return;
+        const manualBuyerInput = Object.prototype.hasOwnProperty.call(options, 'buyerName');
+        const manualPhoneInput = Object.prototype.hasOwnProperty.call(options, 'buyerPhone');
+
+         let sanitizedBuyer = '';
+        if (manualBuyerInput) {
+            const buyerCandidate = typeof buyerName === 'string' ? buyerName : String(buyerName || '');
+            sanitizedBuyer = sanitizeInput(buyerCandidate);
+            if (!sanitizedBuyer) {
+                await releaseReservation(ticketNumber, { silent: true });
+                showAlert('Debes ingresar el nombre del comprador.', 'warning');
+                return;
+            }
+        } else {
+            const promptedName = prompt('Nombre del comprador');
+            sanitizedBuyer = sanitizeInput(promptedName || '');
+            if (!sanitizedBuyer) {
+                await releaseReservation(ticketNumber, { silent: true });
+                showAlert('Venta cancelada. La boleta vuelve a estar disponible.', 'info');
+                return;
+            }
         }
 
-         const phoneData = await promptPhoneNumber();
-        if (!phoneData) {
-            await releaseReservation(ticketNumber, { silent: true });
-            showAlert('Venta cancelada. La boleta vuelve a estar disponible.', 'info');
-            return;
+        let finalPhone = '';
+        if (manualPhoneInput) {
+            const phoneCandidate = sanitizeInput((buyerPhone || '').toString()).replace(/\s+/g, '');
+            const digitsOnly = phoneCandidate.replace(/[^\d+]/g, '');
+            if (!digitsOnly) {
+                await releaseReservation(ticketNumber, { silent: true });
+                showAlert('Debes ingresar un número de contacto válido.', 'warning');
+                return;
+            }
+            finalPhone = digitsOnly.startsWith('+') ? digitsOnly : `+57${digitsOnly}`;
+        } else {
+            const phoneData = await promptPhoneNumber();
+            if (!phoneData) {
+                await releaseReservation(ticketNumber, { silent: true });
+                showAlert('Venta cancelada. La boleta vuelve a estar disponible.', 'info');
+                return;
+            }
+
+            const areaCode = sanitizeInput(phoneData.area || '+57').replace(/[^\d+]/g, '');
+            const phoneNumber = sanitizeInput(phoneData.phone || '');
+            const sanitizedPhone = phoneNumber.replace(/\D/g, '');
+            if (!sanitizedPhone) {
+                await releaseReservation(ticketNumber, { silent: true });
+                showAlert('Debe ingresar un número de celular válido.', 'warning');
+                return;
+            }
+            const finalArea = areaCode.startsWith('+') ? areaCode : '+' + areaCode;
+            finalPhone = finalArea + sanitizedPhone;
         }
 
-        const areaCode = sanitizeInput(phoneData.area || '+57').replace(/[^\d+]/g, '');
-        const phoneNumber = sanitizeInput(phoneData.phone || '');
-        const sanitizedPhone = phoneNumber.replace(/\D/g, '');
-        if (!sanitizedPhone) {
-            await releaseReservation(ticketNumber, { silent: true });
-            showAlert('Debe ingresar un número de celular válido.', 'warning');
-            return;
-        }
-        const finalArea = areaCode.startsWith('+') ? areaCode : '+' + areaCode;
-
+        const numericSaleValue = Number(saleValue);
+        const normalizedAmount = Number.isFinite(numericSaleValue) && numericSaleValue > 0
+            ? Math.round(numericSaleValue)
+            : systemConfig.ticketPrice;
+        
         const salePayload = {
             estado: 'vendida',
             vendedor: sellerName,
             fecha: new Date().toISOString(),
             comprador: sanitizedBuyer,
-            celular: finalArea + sanitizedPhone
+            celular: finalPhone
         };
 
         const { data: saleData, error: saleError } = await supabaseClient
@@ -1585,15 +1629,20 @@ async function toggleTicketState(ticketNumber) {
         }
 
         tickets[ticketNumber] = {
-            ...saleData[0]
+            ...saleData[0],
+            valorPersonalizado: normalizedAmount !== systemConfig.ticketPrice ? normalizedAmount : undefined
         };
         updateTicketElements(ticketNumber);
         updateStats();
         updateSellersList();
 
-        const revenue = `$${systemConfig.ticketPrice.toLocaleString()}`;
+        const revenue = formatCurrency(normalizedAmount);
         showAlert(`Boleta ${ticketNumber} vendida correctamente (${revenue})`, 'success');
         logSecurityEvent('TICKET_SOLD', `Boleta ${ticketNumber} vendida por ${sellerName} - ${revenue}`);
+
+        if (fromForm) {
+            clearTicketForm();
+        }
 
     } catch (error) {
         logSecurityEvent('TICKET_ERROR', `Error actualizando boleta ${ticketNumber}: ${error.message}`, 'ERROR');
@@ -1704,7 +1753,7 @@ async function verifyDatabaseState() {
 async function testConnection() {
     try {
         document.getElementById('testConnBtn').disabled = true;
-        document.getElementById('testConnBtn').textContent = '⏳ Probando...';
+        document.getElementById('testConnBtn').textContent = '⏳ Actualizando...';
         showAlert('Probando conexión segura...', 'info');
 
         if (!supabaseClient) {
@@ -1733,7 +1782,7 @@ async function testConnection() {
         updateConnectionStatus('disconnected');
     } finally {
         document.getElementById('testConnBtn').disabled = false;
-        document.getElementById('testConnBtn').textContent = '🔄 Probar Conexión';
+        document.getElementById('testConnBtn').textContent = 'Actualizar';
     }
 }
 
@@ -1794,24 +1843,95 @@ function updateSellersList() {
     container.innerHTML = html;
 }
 
+function clearTicketForm() {
+    const form = document.getElementById('ticketSaleForm');
+    if (!form) return;
+    form.reset();
+
+    const ticketInput = document.getElementById('ticketNumberInput');
+    if (ticketInput) {
+        ticketInput.focus();
+    }
+}
+
+async function handleTicketFormSubmit(event) {
+    event.preventDefault();
+
+    if (!vendorSession.isAuthenticated || !currentSellerData) {
+        showAlert('Inicie sesión como vendedor para registrar boletas.', 'warning');
+        return;
+    }
+
+    const ticketInput = document.getElementById('ticketNumberInput');
+    const buyerInput = document.getElementById('buyerNameInput');
+    const phoneInput = document.getElementById('buyerPhoneInput');
+    const valueInput = document.getElementById('ticketValueInput');
+
+    const ticketNumber = parseInt(ticketInput?.value, 10);
+    if (!Number.isInteger(ticketNumber) || ticketNumber < 1 || ticketNumber > systemConfig.totalTickets) {
+        showAlert(`Ingrese un número de boleta entre 1 y ${systemConfig.totalTickets}.`, 'warning');
+        return;
+    }
+
+    const buyerName = buyerInput?.value || '';
+    const phoneValue = phoneInput?.value || '';
+
+    if (!buyerName.trim() || !phoneValue.trim()) {
+        showAlert('Completa el nombre y el teléfono del comprador.', 'warning');
+        return;
+    }
+
+    const saleValue = valueInput && valueInput.value ? Number(valueInput.value) : undefined;
+    const submitButton = event.target.querySelector('button[type="submit"]');
+
+    if (submitButton) {
+        submitButton.disabled = true;
+    }
+
+    try {
+        await toggleTicketState(ticketNumber, {
+            buyerName,
+            buyerPhone: phoneValue,
+            saleValue,
+            fromForm: true
+        });
+    } finally {
+        if (submitButton) {
+            submitButton.disabled = false;
+        }
+    }
+}
+
 // Manejar cambio de vendedor
 document.addEventListener('DOMContentLoaded', function() {
     updateVendorUI();
+    
     const select = document.getElementById('currentSeller');
-    if (!select) return;
-    select.addEventListener('change', function() {
-        const sellerId = this.value;
-        if (sellerId) {
-            currentSellerData = sellers.find(s => s.id == sellerId);
-            document.getElementById('sellerPanel').style.display = 'block';
-            createTicketGrid();
-            updateStats();
-            logSecurityEvent('SELLER_SELECT', `Vendedor seleccionado: ${currentSellerData.nombre}`);
-        } else {
-            currentSellerData = null;
-            document.getElementById('sellerPanel').style.display = 'none';
-        }
-    });
+    if (select) {
+        select.addEventListener('change', function() {
+            const sellerId = this.value;
+            if (sellerId) {
+                currentSellerData = sellers.find(s => s.id == sellerId);
+                document.getElementById('sellerPanel').style.display = 'block';
+                createTicketGrid();
+                updateStats();
+                logSecurityEvent('SELLER_SELECT', `Vendedor seleccionado: ${currentSellerData.nombre}`);
+            } else {
+                currentSellerData = null;
+                document.getElementById('sellerPanel').style.display = 'none';
+            }
+        });
+    }
+
+    const saleForm = document.getElementById('ticketSaleForm');
+    if (saleForm) {
+        saleForm.addEventListener('submit', handleTicketFormSubmit);
+    }
+
+    const resetButton = document.getElementById('ticketFormReset');
+    if (resetButton) {
+        resetButton.addEventListener('click', clearTicketForm);
+    }
 });
 
 function getTicketTooltip(ticketData) {
@@ -1855,6 +1975,38 @@ function updateTicketElements(ticketNumber) {
     applyTicketVisual(dashboardElement, data, { isDashboard: true });
 }
 
+function updateLatestTicketsTable() {
+    const tableBody = document.getElementById('latestTicketsBody');
+    if (!tableBody) return;
+
+    const soldTickets = Object.values(tickets)
+        .filter(ticket => ticket.estado === 'vendida')
+        .sort((a, b) => new Date(b.fecha || 0) - new Date(a.fecha || 0))
+        .slice(0, 6);
+
+    if (soldTickets.length === 0) {
+        tableBody.innerHTML = '<tr class="empty-row"><td colspan="4">Sin movimientos recientes</td></tr>';
+        return;
+    }
+
+    const rows = soldTickets.map(ticket => {
+        const buyer = escapeHtml(ticket.comprador || 'Sin comprador');
+        const formattedDate = ticket.fecha ? new Date(ticket.fecha).toLocaleString() : '-';
+        const amount = formatCurrency(ticket.valorPersonalizado ?? systemConfig.ticketPrice);
+
+        return `
+            <tr>
+                <td>${ticket.numero}</td>
+                <td>${buyer}</td>
+                <td>${formattedDate}</td>
+                <td>${amount}</td>
+            </tr>
+        `;
+    }).join('');
+
+    tableBody.innerHTML = rows;
+}
+
 // Crear grid de boletas
 function createTicketGrid() {
     const grid = document.getElementById('ticketGrid');
@@ -1890,15 +2042,30 @@ function updateStats() {
     const revenue = sold * systemConfig.ticketPrice;
     const progress = systemConfig.totalTickets > 0 ? ((sold / systemConfig.totalTickets) * 100).toFixed(1) : 0;
 
-    document.getElementById('availableCount').textContent = available;
-    document.getElementById('soldCount').textContent = sold;
-    document.getElementById('revenueCount').textContent = `$${revenue.toLocaleString()}`;
+    const totalEl = document.getElementById('totalTicketsStat');
+    if (totalEl) totalEl.textContent = systemConfig.totalTickets;
+
+    const availableEl = document.getElementById('availableCount');
+    if (availableEl) availableEl.textContent = available;
+
+    const soldEl = document.getElementById('soldCount');
+    if (soldEl) soldEl.textContent = sold;
+
+    const revenueEl = document.getElementById('revenueCount');
+    if (revenueEl) revenueEl.textContent = formatCurrency(revenue);
 
     // Actualizar dashboard también
-    document.getElementById('dashAvailable').textContent = available;
-    document.getElementById('dashSold').textContent = sold;
-    document.getElementById('dashRevenue').textContent = `$${revenue.toLocaleString()}`;
-    document.getElementById('dashProgress').textContent = `${progress}%`;
+    const totalEl = document.getElementById('totalTicketsStat');
+    if (totalEl) totalEl.textContent = systemConfig.totalTickets;
+
+    const availableEl = document.getElementById('availableCount');
+    if (availableEl) availableEl.textContent = available;
+
+    const soldEl = document.getElementById('soldCount');
+    if (soldEl) soldEl.textContent = sold;
+
+    const revenueEl = document.getElementById('revenueCount');
+    if (revenueEl) revenueEl.textContent = formatCurrency(revenue);
 }
 
 // Actualizar dashboard
@@ -1917,10 +2084,17 @@ async function updateDashboard() {
         const revenue = sold * systemConfig.ticketPrice;
         const progress = systemConfig.totalTickets > 0 ? ((sold / systemConfig.totalTickets) * 100).toFixed(1) : 0;
 
-        document.getElementById('dashAvailable').textContent = available;
-        document.getElementById('dashSold').textContent = sold;
-        document.getElementById('dashRevenue').textContent = `$${revenue.toLocaleString()}`;
-        document.getElementById('dashProgress').textContent = `${progress}%`;
+        const dashAvailable = document.getElementById('dashAvailable');
+        if (dashAvailable) dashAvailable.textContent = available;
+
+        const dashSold = document.getElementById('dashSold');
+        if (dashSold) dashSold.textContent = sold;
+
+        const dashRevenue = document.getElementById('dashRevenue');
+        if (dashRevenue) dashRevenue.textContent = formatCurrency(revenue);
+
+        const dashProgress = document.getElementById('dashProgress');
+        if (dashProgress) dashProgress.textContent = `${progress}%`;
 
         dashGrid.innerHTML = '';
         for (let i = 1; i <= systemConfig.totalTickets; i++) {
