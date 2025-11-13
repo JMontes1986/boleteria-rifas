@@ -32,6 +32,7 @@ let vendorSession = { isAuthenticated: false, seller: null };
 let realtimeInitialized = false;
 let realtimeChannels = [];
 let supabaseLibraryPendingLogged = false;
+const inlineStatusController = { timer: null };
 
 const AREA_CODES = [
     { code: '+1', country: 'Estados Unidos / Canadá' },
@@ -351,9 +352,12 @@ async function updateSystemConfig() {
 }
 
 // Cargar configuración del sistema
-async function loadSystemConfig() {
+async function loadSystemConfig(options = {}) {
+    const { showProgress = false } = options;
     try {
-        showAlert('Cargando configuración del sistema...', 'info');
+        if (showProgress) {
+            showInlineStatus('Sincronizando configuración...', { state: 'info', duration: 900 });
+        }
 
         if (supabaseClient) {
             const { data, error } = await supabaseClient
@@ -839,7 +843,7 @@ function initSupabase() {
     }
 
     try {
-        showAlert('🔒 Solicitando credenciales seguras al servidor...', 'info');
+        showInlineStatus('Conectando con el servidor seguro...', { state: 'info', duration: 900 });
 
         const env = window.SECURE_ENV || {};
         const serviceUrl = env.serviceUrl;
@@ -854,6 +858,7 @@ function initSupabase() {
                 logSecurityEvent('SUPABASE_PENDING', 'Librería externa aún no disponible. Esperando carga segura...', 'WARNING');
                 supabaseLibraryPendingLogged = true;
             }
+            showInlineStatus('Esperando librerías de seguridad...', { state: 'info', duration: 900 });
             return null;
         }
 
@@ -861,6 +866,8 @@ function initSupabase() {
         supabaseClient = createClient(serviceUrl, anonKey);
         supabaseLibraryPendingLogged = false;
 
+        showInlineStatus('Conexión segura establecida', { state: 'success', duration: 1100 });
+        
         logSecurityEvent('SUPABASE_INIT', 'Cliente Supabase inicializado correctamente');
         loadInitialData();
 
@@ -1295,21 +1302,23 @@ async function logoutVendor() {
 // Inicializar aplicación
 async function loadInitialData() {
     try {
+        showInlineStatus('Sincronizando datos iniciales...', { state: 'info', duration: 1100 });
         updateConnectionStatus('connected');
         await loadSellers();
         await loadTickets();
         await initializeTicketsIfNeeded();
 
         // Cargar configuración inicial
-        await loadSystemConfig();
+        await loadSystemConfig({ showProgress: true });
 
         setupRealtimeSubscriptions();
 
-        showAlert('Sistema cargado con seguridad avanzada', 'success');
+        showInlineStatus('Sistema listo. Seguridad activa.', { state: 'success', duration: 1400 });
         logSecurityEvent('APP_INIT', 'Aplicación inicializada correctamente');
     } catch (error) {
         logSecurityEvent('APP_ERROR', `Error inicializando aplicación: ${error.message}`, 'ERROR');
         updateConnectionStatus('disconnected');
+        showInlineStatus('Error al iniciar el sistema', { state: 'error', duration: 1600 });
         showAlert('Error cargando la aplicación: ' + error.message, 'danger');
     }
 }
@@ -2249,6 +2258,47 @@ function showAlert(message, type) {
     }, 5000);
 }
 
+function clearInlineStatus() {
+    const statusEl = document.getElementById('loadingStatus');
+    if (!statusEl) return;
+
+    if (inlineStatusController.timer) {
+        clearTimeout(inlineStatusController.timer);
+        inlineStatusController.timer = null;
+    }
+
+    statusEl.classList.remove('visible');
+    statusEl.removeAttribute('data-state');
+    statusEl.textContent = '';
+}
+
+function showInlineStatus(message, options = {}) {
+    const statusEl = document.getElementById('loadingStatus');
+    if (!statusEl) return;
+
+    const { state = 'info', duration = 1000 } = options;
+
+    if (inlineStatusController.timer) {
+        clearTimeout(inlineStatusController.timer);
+        inlineStatusController.timer = null;
+    }
+
+    if (!message) {
+        clearInlineStatus();
+        return;
+    }
+
+    statusEl.textContent = sanitizeInput(message);
+    statusEl.dataset.state = state;
+    statusEl.classList.add('visible');
+
+    if (duration > 0) {
+        inlineStatusController.timer = setTimeout(() => {
+            clearInlineStatus();
+        }, duration);
+    }
+}
+
 function getStoredThemePreference() {
     try {
         return localStorage.getItem(THEME_STORAGE_KEY);
@@ -2358,7 +2408,7 @@ document.addEventListener('DOMContentLoaded', function() {
     logSecurityEvent('APP_START', 'Aplicación iniciada', 'INFO');
 
     // Inicializar aplicación
-    showAlert('🔒 Iniciando sistema con seguridad avanzada...', 'info');
+    showInlineStatus('Iniciando sistema seguro...', { state: 'info', duration: 900 });
     initSupabase();
 
     populateAreaCodes();
