@@ -1084,6 +1084,82 @@ async function addSeller() {
     }
 }
 
+async function resetSellerPassword() {
+    if (!validateSession()) {
+        showAlert('Sesión expirada. Por favor, inicie sesión nuevamente.', 'warning');
+        return;
+    }
+
+    const sellerSelect = document.getElementById('sellerResetSelect');
+    const passwordInput = document.getElementById('sellerResetPassword');
+    const confirmInput = document.getElementById('sellerResetPasswordConfirm');
+
+    if (!sellerSelect || !passwordInput || !confirmInput) {
+        showAlert('Formulario de reinicio no disponible.', 'danger');
+        return;
+    }
+
+    const sellerId = sellerSelect.value;
+    const newPassword = passwordInput.value;
+    const confirmPassword = confirmInput.value;
+
+    if (!sellerId) {
+        showAlert('Seleccione un vendedor válido.', 'warning');
+        return;
+    }
+
+    if (!newPassword || newPassword.trim().length < 6) {
+        showAlert('La contraseña debe tener al menos 6 caracteres.', 'danger');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showAlert('Las contraseñas no coinciden.', 'danger');
+        return;
+    }
+
+    if (!supabaseClient) {
+        showAlert('Sin conexión a base de datos. Intente nuevamente.', 'warning');
+        return;
+    }
+
+    const seller = sellers.find(item => String(item.id) === String(sellerId));
+    if (!seller) {
+        showAlert('Vendedor no encontrado.', 'danger');
+        return;
+    }
+
+    const resetButton = document.getElementById('resetSellerPasswordBtn');
+
+    try {
+        if (resetButton) {
+            resetButton.disabled = true;
+        }
+
+        const hashedPassword = await hashPassword(newPassword);
+        const { error } = await supabaseClient
+            .from('vendedores')
+            .update({ password_hash: hashedPassword })
+            .eq('id', seller.id);
+
+        if (error) throw error;
+
+        passwordInput.value = '';
+        confirmInput.value = '';
+        sellerSelect.value = '';
+
+        showAlert(`Contraseña reiniciada para ${escapeHtml(seller.nombre)}.`, 'success');
+        logSecurityEvent('SELLER_PASSWORD_RESET', `Contraseña reiniciada para vendedor: ${seller.nombre}`, 'WARNING');
+    } catch (error) {
+        logSecurityEvent('SELLER_PASSWORD_RESET_ERROR', `Error reiniciando contraseña vendedor ${sellerId}: ${error.message}`, 'ERROR');
+        showAlert('Error reiniciando contraseña: ' + error.message, 'danger');
+    } finally {
+        if (resetButton) {
+            resetButton.disabled = false;
+        }
+    }
+}
+
 function setVendorLoginMessage(message, type = 'danger') {
     const el = document.getElementById('vendorLoginMessage');
     if (!el) return;
@@ -1857,15 +1933,25 @@ function updateConnectionStatus(status) {
 
 // Actualizar dropdown de vendedores
 function updateSellerDropdown() {
-    const select = document.getElementById('currentSeller');
-    if (!select) return;
-    select.innerHTML = '<option value="">Seleccione un vendedor</option>';
+   const dropdowns = [
+        document.getElementById('currentSeller'),
+        document.getElementById('sellerResetSelect')
+    ].filter(Boolean);
+
+    if (dropdowns.length === 0) return;
+
+    dropdowns.forEach(select => {
+        select.innerHTML = '<option value="">Seleccione un vendedor</option>';
+    });
 
     sellers.forEach(seller => {
-        const option = document.createElement('option');
-        option.value = seller.id;
-        option.textContent = `${escapeHtml(seller.nombre)} (${escapeHtml(seller.username || '')})`;
-        select.appendChild(option);
+        const optionText = `${escapeHtml(seller.nombre)} (${escapeHtml(seller.username || '')})`;
+        dropdowns.forEach(select => {
+            const option = document.createElement('option');
+            option.value = seller.id;
+            option.textContent = optionText;
+            select.appendChild(option);
+        });
     });
 }
 
