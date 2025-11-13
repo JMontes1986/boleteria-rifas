@@ -29,8 +29,19 @@ alter table if exists public.vendedores
 alter table if exists public.vendedores
     alter column password_hash set not null;
 
-alter table if exists public.vendedores
-    add constraint if not exists vendedores_username_key unique (username);
+do $$
+begin
+    if not exists (
+        select 1
+        from pg_constraint
+        where conname = 'vendedores_username_key'
+          and conrelid = 'public.vendedores'::regclass
+    ) then
+        alter table public.vendedores
+            add constraint vendedores_username_key unique (username);
+    end if;
+end;
+$$;
 
 create table if not exists public.boletas (
     numero integer primary key,
