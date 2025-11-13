@@ -2,25 +2,950 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Venta de Boletería @J.montes86</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="assets/css/styles.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Venta de Boletería @J.montes86</title>
+    
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://*;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*;">
-  <meta http-equiv="X-Content-Type-Options" content="nosniff">
-  <meta http-equiv="X-Frame-Options" content="DENY">
-  <meta http-equiv="X-XSS-Protection" content="1; mode=block">
-  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .security-badge {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1001;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #e9ecef;
+        }
+
+        .tab.active {
+            background: #007bff;
+            color: white;
+        }
+
+        .tab.hidden {
+            display: none;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .admin-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #007bff;
+        }
+
+        .admin-section h3 {
+            color: #007bff;
+            margin-bottom: 15px;
+        }
+
+        .admin-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa, #e2e6ea);
+            border: 1px solid #ced4da;
+        }
+
+        .admin-toolbar .session-info {
+            font-weight: bold;
+            color: #343a40;
+        }
+
+        .admin-toolbar .session-info span {
+            color: #007bff;
+        }
+        
+        .config-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 10px;
+            border: 2px solid #2196f3;
+        }
+
+        .config-section h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .current-config {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .current-config h4 {
+            color: #155724;
+            margin-bottom: 10px;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #1e7e34;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-info {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-info:hover:not(:disabled) {
+            background: #138496;
+            transform: translateY(-2px);
+        }
+
+        /* Estadísticas más pequeñas para el dashboard */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid.compact {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-card.compact {
+            padding: 10px;
+        }
+
+        .stat-card h3 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        .stat-card.compact h3 {
+            font-size: 1.4em;
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            font-size: 0.9em;
+        }
+
+        .stat-card.compact p {
+            font-size: 0.8em;
+        }
+
+        .ticket-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+            gap: 3px;
+            margin-top: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            background: #f8f9fa;
+        }
+
+        /* Grid más grande para el dashboard */
+        .ticket-grid.dashboard {
+            max-height: 600px;
+            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+            gap: 4px;
+            padding: 20px;
+        }
+
+        .ticket {
+            width: 45px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .ticket.dashboard {
+            width: 50px;
+            height: 40px;
+            font-size: 12px;
+        }
+
+        .ticket.disponible {
+            background: #28a745;
+            color: white;
+        }
+
+        .ticket.vendida {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .ticket.reservada {
+            background: #ffc107;
+            color: #212529;
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 rgba(255, 193, 7, 0.7); }
+            50% { box-shadow: 0 0 12px rgba(255, 193, 7, 0.9); }
+            100% { box-shadow: 0 0 0 rgba(255, 193, 7, 0.7); }
+        }
+
+        .ticket:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .tickets-section {
+            margin-top: 20px;
+        }
+
+        .tickets-section h4 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .tickets-section.dashboard h4 {
+            font-size: 1.4em;
+            margin-bottom: 15px;
+        }
+
+        .tickets-section p {
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        /* Ventas por vendedor más compacto en dashboard */
+        .sales-by-seller {
+            margin-bottom: 15px;
+        }
+
+        .sales-by-seller h4 {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .sales-by-seller .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+        }
+
+        .sales-by-seller .stat-card {
+            padding: 8px;
+        }
+
+        .sales-by-seller .stat-card h3 {
+            font-size: 1.2em;
+            margin-bottom: 3px;
+        }
+
+        .sales-by-seller .stat-card p {
+            font-size: 0.75em;
+        }
+
+        .sales-by-seller .stat-card small {
+            font-size: 0.7em;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+         .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+        }
+
+        .modal-content h3 {
+            margin-bottom: 15px;
+        }
+
+        .modal-content label {
+            display: block;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        .modal-content input[type="tel"],
+        .modal-content input[list] {
+            width: 100%;
+            padding: 6px;
+            margin-top: 5px;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .connection-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .connection-status {
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .connection-status.connected {
+            background: #28a745;
+        }
+
+        .connection-status.disconnected {
+            background: #dc3545;
+        }
+
+        .test-connection-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            background: #17a2b8;
+            color: white;
+            transition: all 0.3s;
+            display: block;
+            width: 100%;
+        }
+
+        .test-connection-btn:hover:not(:disabled) {
+            background: #138496;
+            transform: translateY(-1px);
+        }
+
+        .test-connection-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .security-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #28a745;
+        }
+
+        .security-info h4 {
+            color: #28a745;
+            margin-bottom: 10px;
+        }
+
+        .captcha-container {
+            margin: 15px 0;
+            padding: 15px;
+            border: 2px dashed #007bff;
+            border-radius: 8px;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .session-info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                max-width: 100%;
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .stats-grid.compact {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .ticket-grid {
+                grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+                gap: 2px;
+                padding: 10px;
+            }
+            
+            .ticket-grid.dashboard {
+                grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+            }
+            
+            .ticket {
+                width: 40px;
+                height: 30px;
+                font-size: 10px;
+            }
+
+            .ticket.dashboard {
+                width: 45px;
+                height: 35px;
+                font-size: 11px;
+            }
+
+            .connection-controls {
+                position: static;
+                margin: 20px auto;
+                width: 200px;
+            }
+
+            .sales-by-seller .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="security-badge">🔒 SECURED</div>
+    
+    <div class="connection-controls">
+        <div class="connection-status" id="connectionStatus">
+            🔴 Conectando...
+        </div>
+        <button class="test-connection-btn" onclick="testConnection()" id="testConnBtn">
+            🔄 Probar Conexión
+        </button>
+    </div>
 
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel" src="assets/js/app.jsx"></script>
+    <div class="session-info" id="sessionInfo">
+        Sesión: No autenticado
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>🎫 Sistema de Venta de Boletería @J.montes86</h1>
+            <p>Gestión de Rifas</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('admin')">👨‍💼 Administrador</button>
+            <button class="tab" onclick="showTab('seller')">🛒 Vendedor</button>
+            <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="tab hidden" id="securityTab" onclick="showTab('security')">🔒 Seguridad</button>
+        </div>
+
+        <!-- Pestaña Administrador -->
+        <div id="admin" class="tab-content active">
+            <div class="security-info">
+                <h4>🔒 Autenticación Segura</h4>
+                <p>Sistema protegido con autenticación robusta, rate limiting y logs de auditoría.</p>
+            </div>
+            
+            <div class="admin-section" id="adminLoginSection">
+                <h3>🔐 Panel de Administrador</h3>
+                
+                <div class="form-group">
+                    <label>Usuario Administrador:</label>
+                    <input type="text" id="adminUser" placeholder="Ingrese usuario administrador" maxlength="50">
+                </div>
+                
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="adminPass" placeholder="Ingrese contraseña" maxlength="100">
+                </div>
+
+                <div class="captcha-container">
+                    <p>Verificación Anti-Bot:</p>
+                    <span id="captchaQuestion"></span>
+                    <input type="number" id="captchaAnswer" placeholder="Respuesta" style="width: 100px; margin: 10px;">
+                </div>
+                
+                <button class="btn btn-primary" onclick="loginAdmin()" id="loginBtn">Iniciar Sesión como Administrador</button>
+                
+                <div id="loginAttempts" style="margin-top: 10px; color: #dc3545;"></div>
+            </div>
+
+            <div id="adminPanel" style="display: none;">
+                <div class="admin-toolbar">
+                    <div class="session-info">
+                        Sesión activa como <span id="adminSessionUser">administrador</span>
+                    </div>
+                    <button class="btn btn-danger" id="adminLogoutBtn" style="display: none;" onclick="logout()">Cerrar Sesión</button>
+                </div>
+                <!-- NUEVA SECCIÓN DE CONFIGURACIÓN -->
+                <div class="config-section">
+                    <h3>⚙️ Configuración del Sistema</h3>
+                    
+                    <div class="current-config">
+                        <h4>📊 Configuración Actual</h4>
+                        <p id="currentConfigDisplay">Boletas: 1000 | Precio: $1,000 c/u | Total posible: $1,000,000</p>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Cantidad Total de Boletas:</label>
+                            <select id="totalTicketsSelect">
+                                <option value="100">100 boletas</option>
+                                <option value="500">500 boletas</option>
+                                <option value="1000" selected>1,000 boletas</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Precio por Boleta ($):</label>
+                            <input type="number" id="ticketPriceInput" min="100" max="100000" step="50" value="1000" placeholder="Precio en pesos">
+                            <small style="color: #666; font-size: 0.8em;">Rango: $100 - $100,000</small>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn btn-success" onclick="updateSystemConfig()" id="updateConfigBtn">💾 Guardar Configuración</button>
+                        <button class="btn btn-info" onclick="loadSystemConfig()" id="loadConfigBtn">🔄 Recargar Config</button>
+                        <button class="btn btn-warning" onclick="previewChanges()" id="previewBtn">👁️ Vista Previa</button>
+                    </div>
+                    
+                    <div id="configPreview" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                        <h5>🔍 Vista Previa de Cambios:</h5>
+                        <p id="previewText"></p>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN DE GESTIÓN DE VENDEDORES -->
+                <div class="admin-section">
+                    <h3>👥 Gestión de Vendedores</h3>
+                    
+                    <div class="form-group">
+                        <label>Nombre del Vendedor:</label>
+                        <input type="text" id="sellerName" placeholder="Ingrese nombre del vendedor" maxlength="100">
+                    </div>
+
+                     <div class="form-group">
+                        <label>Contraseña Temporal:</label>
+                        <input type="password" id="sellerPassword" placeholder="Contraseña para el vendedor" maxlength="100">
+                        <small style="color: #666; font-size: 0.8em;">Debe tener al menos 6 caracteres.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Confirmar Contraseña:</label>
+                        <input type="password" id="sellerPasswordConfirm" placeholder="Repite la contraseña" maxlength="100">
+                    </div>
+
+                    <p style="font-size: 0.85em; color: #555;">El usuario se generará automáticamente con el nombre del vendedor en minúsculas y sin espacios.</p>
+                    
+                    <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
+                    <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
+                    <button class="btn btn-primary" onclick="verifyDatabaseState()" id="verifyDbBtn">Verificar Estado BD</button>
+                    <button class="btn btn-primary" onclick="showSecurityLogs()" id="securityLogsBtn">Ver Logs de Seguridad</button>
+                    
+                    <div id="sellersList" style="margin-top: 20px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña Vendedor -->
+        <div id="seller" class="tab-content">
+            <div id="vendorLogin" class="admin-section" style="margin-bottom: 20px;">
+                <h3>🛒 Acceso de Vendedores</h3>
+                <p>Inicia sesión con tu usuario (solo letras) y contraseña para vender boletas en tiempo real.</p>
+                <div class="form-group">
+                    <label>Usuario del vendedor:</label>
+                    <input type="text" id="vendorUsername" placeholder="Ej: juanperez" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="vendorPassword" placeholder="Ingresa tu contraseña" maxlength="100">
+                </div>
+                <button class="btn btn-primary" id="vendorLoginBtn" onclick="loginVendor()">Iniciar Sesión</button>
+                <div id="vendorLoginMessage" style="margin-top: 10px; color: #dc3545;"></div>
+            </div>
+
+            <div id="sellerPanel" style="display: none;">
+                <div class="admin-section" style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <h3 id="sellerWelcome">Bienvenido</h3>
+                            <p style="margin-top: 5px; color: #555;">Selecciona una boleta disponible para iniciar el proceso de venta.</p>
+                        </div>
+                        <button class="btn btn-danger" onclick="logoutVendor()" id="vendorLogoutBtn">Cerrar Sesión</button>
+                    </div>
+                    <div id="sellerReservationNotice" style="margin-top: 10px; color: #856404; display: none; background: #fff3cd; padding: 10px; border-radius: 8px;">
+                        Existen boletas reservadas por ti que fueron liberadas automáticamente al cerrar tu sesión anterior.
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3 id="availableCount">-</h3>
+                        <p>Boletas Disponibles</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="soldCount">-</h3>
+                        <p>Boletas Vendidas</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3 id="revenueCount">$0</h3>
+                        <p>Ingresos Totales</p>
+                    </div>
+                </div>
+
+                <div class="tickets-section">
+                    <h4>Boletas (Click para vender/liberar)</h4>
+                    <p><small>🟢 Verde = Disponible | 🟡 Amarillo = En proceso | 🔴 Rojo = Vendida | Precio: $<span id="currentPriceDisplay">1,000</span> c/u</small</p>
+                    <div id="ticketGridLoading" class="loading">
+                        <div class="spinner"></div>
+                        Cargando boletas...
+                    </div>
+                    <div class="ticket-grid" id="ticketGrid" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pestaña Dashboard (MEJORADA) -->
+        <div id="dashboard" class="tab-content">
+            <h3>📊 Dashboard General</h3>
+            
+            <!-- Estadísticas compactas -->
+            <div class="stats-grid compact">
+                <div class="stat-card compact">
+                    <h3 id="dashAvailable">-</h3>
+                    <p>Disponibles</p>
+                </div>
+                <div class="stat-card compact">
+                    <h3 id="dashSold">-</h3>
+                    <p>Vendidas</p>
+                </div>
+                <div class="stat-card compact">
+                    <h3 id="dashRevenue">$-</h3>
+                    <p>Ingresos</p>
+                </div>
+                <div class="stat-card compact">
+                    <h3 id="dashProgress">-%</h3>
+                    <p>Progreso</p>
+                </div>
+            </div>
+
+            <!-- Ventas por vendedor compacto -->
+            <div id="salesBySeller" class="sales-by-seller"></div>
+            
+            <!-- Grid de boletas más prominente -->
+            <div class="tickets-section dashboard">
+                <h4>🎫 Estado de Todas las Boletas</h4>
+                 <p><small>🟢 Verde = Disponible | 🟡 Amarillo = En proceso | 🔴 Rojo = Vendida | Total: <span id="dashTotalTickets">1000</span> boletas</small</p>
+                <div id="dashboardLoading" class="loading">
+                    <div class="spinner"></div>
+                    Cargando dashboard...
+                </div>
+                <div class="ticket-grid dashboard" id="dashboardTicketGrid" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Pestaña Seguridad (SOLO VISIBLE PARA ADMIN) -->
+        <div id="security" class="tab-content">
+            <h3>🔒 Panel de Seguridad</h3>
+            
+            <div class="security-info">
+                <h4>Medidas de Seguridad Implementadas</h4>
+                <ul>
+                    <li>✅ Headers de Seguridad (CSP, XSS Protection, etc.)</li>
+                    <li>✅ Sanitización de Inputs XSS</li>
+                    <li>✅ Rate Limiting en Login</li>
+                    <li>✅ CAPTCHA Anti-Bot</li>
+                    <li>✅ Logs de Auditoría</li>
+                    <li>✅ Validación y Escape de HTML</li>
+                    <li>✅ Sesiones Seguras con Tokens</li>
+                    <li>✅ Cifrado de Datos Sensibles</li>
+                </ul>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3 id="securityAttempts">0</h3>
+                    <p>Intentos de Login</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="securityBlocked">0</h3>
+                    <p>Intentos Bloqueados</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="securitySessions">0</h3>
+                    <p>Sesiones Activas</p>
+                </div>
+            </div>
+
+            <div id="securityLogs" style="max-height: 300px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                <h4>Logs de Seguridad en Tiempo Real</h4>
+                <div id="logsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="alerts"></div>
+    <div id="phoneModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>📞 Ingresar Celular</h3>
+            <label>Código de área:
+                <input list="areaCodeList" id="modalAreaCode" value="+57">
+                <datalist id="areaCodeList">
+                    <datalist id="areaCodeList"></datalist>
+                </datalist>
+            </label>
+            <label>Número de celular:
+                <input type="tel" id="modalPhone" placeholder="1234567890">
+            </label>
+            <div class="modal-actions">
+                <button id="phoneModalCancel" class="btn btn-danger">Cancelar</button>
+                <button id="phoneModalOk" class="btn btn-success">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/vendor-loader.js"></script>
+    <script src="assets/js/app.js"></script>
 </body>
 </html>
