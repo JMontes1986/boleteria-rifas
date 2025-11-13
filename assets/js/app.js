@@ -844,6 +844,7 @@ function initSupabase() {
 
     try {
         showInlineStatus('Conectando con el servidor seguro...', { state: 'info', duration: 900 });
+        updateConnectionStatus('connecting');
 
         const env = window.SECURE_ENV || {};
         const serviceUrl = env.serviceUrl;
@@ -859,6 +860,7 @@ function initSupabase() {
                 supabaseLibraryPendingLogged = true;
             }
             showInlineStatus('Esperando librerías de seguridad...', { state: 'info', duration: 900 });
+            updateConnectionStatus('connecting');
             return null;
         }
 
@@ -875,6 +877,7 @@ function initSupabase() {
     } catch (error) {
         logSecurityEvent('SUPABASE_ERROR', `Error inicializando Supabase: ${error.message}`, 'ERROR');
         showAlert('Error de conexión segura: ' + error.message, 'danger');
+        updateConnectionStatus('disconnected');
         return null;
     }
 }
@@ -1839,12 +1842,12 @@ function updateConnectionStatus(status) {
     if (status === 'connected') {
         statusEl.className = 'connection-status connected';
         statusEl.textContent = '🟢 Conectado';
+        } else if (status === 'connecting') {
+        statusEl.className = 'connection-status connecting';
+        statusEl.textContent = '🟡 Conectando...';
     } else if (status === 'disconnected') {
         statusEl.className = 'connection-status disconnected';
         statusEl.textContent = '🔴 Desconectado';
-    } else {
-        statusEl.className = 'connection-status disconnected';
-        statusEl.textContent = '🟡 Conectando...';
     }
 }
 
@@ -2393,6 +2396,7 @@ document.addEventListener('vendor:error', function(event) {
     const detail = event && event.detail && event.detail.message ? event.detail.message : 'Error desconocido';
     logSecurityEvent('SUPABASE_VENDOR_ERROR', `Error cargando biblioteca segura: ${detail}`, 'ERROR');
     showAlert('Error cargando librerías de seguridad. Revise la conexión segura.', 'danger');
+    updateConnectionStatus('disconnected');
 });
 
 document.addEventListener('DOMContentLoaded', function() {
