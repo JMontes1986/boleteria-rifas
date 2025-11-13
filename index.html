@@ -1596,6 +1596,11 @@
             
             // Mostrar pestaña de seguridad para administradores
             toggleSecurityTab(true);
+
+            const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+            if (adminLogoutBtn) {
+                adminLogoutBtn.style.display = 'inline-flex';
+            }
             
             // Auto-logout después del timeout
             setTimeout(() => {
@@ -1631,6 +1636,11 @@
                 
                 // Ocultar pestaña de seguridad
                 toggleSecurityTab(false);
+
+                const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+                if (adminLogoutBtn) {
+                    adminLogoutBtn.style.display = 'none';
+                }
                 
                 updateSessionInfo();
                 showAlert('Sesión cerrada por seguridad', 'info');
