@@ -1138,30 +1138,7 @@ async function resetSellerPassword() {
     if (!seller) {
         showAlert('Vendedor no encontrado.', 'danger');
         return;
-
-        <div style="margin-top: 28px; border-top: 1px solid rgba(148, 163, 184, 0.2); padding-top: 20px;">
-                        <h4 style="margin-bottom: 16px;">🔁 Reinicio de contraseñas de vendedores</h4>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Seleccionar vendedor:</label>
-                                <select id="sellerResetSelect">
-                                    <option value="">Seleccione un vendedor</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Nueva contraseña temporal:</label>
-                                <input type="password" id="sellerResetPassword" placeholder="Ingresa nueva contraseña" maxlength="100">
-                            </div>
-                            <div class="form-group">
-                                <label>Confirmar contraseña:</label>
-                                <input type="password" id="sellerResetPasswordConfirm" placeholder="Repite la contraseña" maxlength="100">
-                            </div>
-                        </div>
-                        <div class="form-actions" style="justify-content: flex-start; margin-top: 16px;">
-                            <button class="btn btn-warning" onclick="resetSellerPassword()" id="resetSellerPasswordBtn">Reiniciar contraseña</button>
-                        </div>
-                        <p style="font-size: 0.8em; color: var(--text-muted); margin-top: 8px;">La contraseña se actualiza al instante. Comparte la nueva credencial con el vendedor de forma segura.</p>
-                    </div>
+        }
 
     const resetButton = document.getElementById('resetSellerPasswordBtn');
 
