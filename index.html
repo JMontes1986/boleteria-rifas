@@ -2651,6 +2651,8 @@
         // Actualizar lista de vendedores
         function updateSellersList() {
             const container = document.getElementById('sellersList');
+            if (!container) return;
+            
             if (sellers.length === 0) {
                 container.innerHTML = '<p>No hay vendedores registrados</p>';
                 return;
@@ -2660,7 +2662,15 @@
             sellers.forEach(seller => {
                 const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre && t.estado === 'vendida').length;
                 const ingresos = ventas * systemConfig.ticketPrice;
-                const ventas = Object.values(tickets).filter(t => t.vendedor === seller.nombre && t.estado === 'vendida').length;
+                const username = seller.username ? ` (${escapeHtml(seller.username)})` : '';
+
+                html += `
+                    <li>
+                        <strong>${escapeHtml(seller.nombre)}</strong>${username}
+                        - Ventas: ${ventas}
+                        - Ingresos: $${ingresos.toLocaleString()}
+                    </li>
+                `;
             });
             html += '</ul>';
             container.innerHTML = html;
