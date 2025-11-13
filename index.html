@@ -114,6 +114,28 @@
             margin-bottom: 15px;
         }
 
+        .admin-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa, #e2e6ea);
+            border: 1px solid #ced4da;
+        }
+
+        .admin-toolbar .session-info {
+            font-weight: bold;
+            color: #343a40;
+        }
+
+        .admin-toolbar .session-info span {
+            color: #007bff;
+        }
+        
         .config-section {
             margin-bottom: 30px;
             padding: 20px;
@@ -667,7 +689,7 @@
                 <p>Sistema protegido con autenticación robusta, rate limiting y logs de auditoría.</p>
             </div>
             
-            <div class="admin-section">
+            <div class="admin-section" id="adminLoginSection">
                 <h3>🔐 Panel de Administrador</h3>
                 
                 <div class="form-group">
@@ -692,6 +714,12 @@
             </div>
 
             <div id="adminPanel" style="display: none;">
+                <div class="admin-toolbar">
+                    <div class="session-info">
+                        Sesión activa como <span id="adminSessionUser">administrador</span>
+                    </div>
+                    <button class="btn btn-danger" id="adminLogoutBtn" style="display: none;" onclick="logout()">Cerrar Sesión</button>
+                </div>
                 <!-- NUEVA SECCIÓN DE CONFIGURACIÓN -->
                 <div class="config-section">
                     <h3>⚙️ Configuración del Sistema</h3>
@@ -1641,6 +1669,16 @@
                 if (adminLogoutBtn) {
                     adminLogoutBtn.style.display = 'none';
                 }
+
+                const adminLoginSection = document.getElementById('adminLoginSection');
+                if (adminLoginSection) {
+                    adminLoginSection.style.display = 'block';
+                }
+
+                const sessionUserLabel = document.getElementById('adminSessionUser');
+                if (sessionUserLabel) {
+                    sessionUserLabel.textContent = 'administrador';
+                }
                 
                 updateSessionInfo();
                 showAlert('Sesión cerrada por seguridad', 'info');
@@ -1800,6 +1838,12 @@
                     
                     const session = createSecureSession(username);
                     document.getElementById('adminPanel').style.display = 'block';
+                    document.getElementById('adminLoginSection').style.display = 'none';
+
+                    const sessionUserLabel = document.getElementById('adminSessionUser');
+                    if (sessionUserLabel) {
+                        sessionUserLabel.textContent = username;
+                    }
                     
                     showAlert('¡Login exitoso! Sesión segura iniciada', 'success');
                     logSecurityEvent('LOGIN_SUCCESS', `Login exitoso para usuario: ${username}`, 'INFO');
