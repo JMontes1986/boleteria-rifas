@@ -2040,21 +2040,7 @@ function updateStats() {
     const available = Object.values(tickets).filter(t => t.estado === 'disponible').length;
     const sold = Object.values(tickets).filter(t => t.estado === 'vendida').length;
     const revenue = sold * systemConfig.ticketPrice;
-    const progress = systemConfig.totalTickets > 0 ? ((sold / systemConfig.totalTickets) * 100).toFixed(1) : 0;
 
-    const totalEl = document.getElementById('totalTicketsStat');
-    if (totalEl) totalEl.textContent = systemConfig.totalTickets;
-
-    const availableEl = document.getElementById('availableCount');
-    if (availableEl) availableEl.textContent = available;
-
-    const soldEl = document.getElementById('soldCount');
-    if (soldEl) soldEl.textContent = sold;
-
-    const revenueEl = document.getElementById('revenueCount');
-    if (revenueEl) revenueEl.textContent = formatCurrency(revenue);
-
-    // Actualizar dashboard también
     const totalEl = document.getElementById('totalTicketsStat');
     if (totalEl) totalEl.textContent = systemConfig.totalTickets;
 
