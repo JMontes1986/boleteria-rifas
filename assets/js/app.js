@@ -955,7 +955,43 @@ async function loginAdmin() {
 // Validación segura de credenciales
 async function validateCredentialsSecurely(username, password) {
     await new Promise(resolve => setTimeout(resolve, 1000));
-    return username === 'admin' && password === 'SecurePass123!';
+    
+    const client = initSupabase();
+
+    if (!client) {
+        logSecurityEvent('LOGIN_VALIDATION_ERROR', 'Cliente Supabase no disponible para validar credenciales', 'ERROR');
+        return false;
+    }
+
+    try {
+        const hashedPassword = await hashPassword(password);
+        const { data, error } = await client
+            .from('administradores')
+            .select('password_hash')
+            .eq('username', username)
+            .limit(1);
+
+        if (error) {
+            logSecurityEvent('LOGIN_VALIDATION_ERROR', `Error consultando administrador: ${error.message}`, 'ERROR');
+            return false;
+        }
+
+        if (!data || data.length === 0) {
+            logSecurityEvent('LOGIN_INVALID_USER', `Usuario administrador no encontrado: ${username}`, 'WARNING');
+            return false;
+        }
+
+        const isValid = data[0].password_hash === hashedPassword;
+
+        if (!isValid) {
+            logSecurityEvent('LOGIN_INVALID_PASSWORD', `Contraseña inválida para usuario administrador: ${username}`, 'WARNING');
+        }
+
+        return isValid;
+    } catch (error) {
+        logSecurityEvent('LOGIN_VALIDATION_EXCEPTION', `Fallo validando credenciales: ${error.message}`, 'ERROR');
+        return false;
+    }
 }
 
 // Agregar vendedor SECURIZADO
