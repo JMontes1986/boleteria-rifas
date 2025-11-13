@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="dark" data-asset-version="2.0.1">
 <head>
 <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -814,6 +814,46 @@
             border: 1px solid rgba(251, 191, 36, 0.3);
         }
 
+        .loading-status {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translate(-50%, -10px);
+            padding: 8px 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: rgba(15, 23, 42, 0.88);
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 60;
+        }
+
+        [data-theme="light"] .loading-status {
+            background: rgba(255, 255, 255, 0.88);
+            border-color: rgba(148, 163, 184, 0.35);
+            color: var(--text-muted);
+        }
+
+        .loading-status.visible {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+
+        .loading-status[data-state="success"] {
+            color: #4ade80;
+            border-color: rgba(34, 197, 94, 0.35);
+        }
+
+        .loading-status[data-state="error"] {
+            color: #fca5a5;
+            border-color: rgba(248, 113, 113, 0.35);
+        }
+        
         .session-info {
             position: fixed;
             right: 24px;
@@ -957,6 +997,8 @@
             <button class="btn-ghost" onclick="testConnection()" id="testConnBtn">Actualizar</button>
         </div>
     </header>
+
+    <div id="loadingStatus" class="loading-status" aria-live="polite" aria-atomic="true"></div>
 
     <div class="session-info" id="sessionInfo">
         Sesión: No autenticado
@@ -1316,7 +1358,37 @@
         </div>
     </div>
 
-    <script src="assets/js/vendor-loader.js"></script>
-    <script src="assets/js/app.js"></script>
+    <script>
+        (function loadVersionedAssets() {
+            const version = document.documentElement.dataset.assetVersion || String(Date.now());
+            let appScriptQueued = false;
+
+            function appendScript(src, onload, onerror) {
+                const script = document.createElement('script');
+                script.src = `${src}?v=${encodeURIComponent(version)}`;
+                script.async = false;
+                if (typeof onload === 'function') {
+                    script.onload = onload;
+                }
+                script.onerror = function(event) {
+                    console.error(`No se pudo cargar el recurso ${src}`, event);
+                    if (typeof onerror === 'function') {
+                        onerror(event);
+                    }
+                };
+                document.body.appendChild(script);
+            }
+
+            function ensureAppScriptLoaded() {
+                if (appScriptQueued) {
+                    return;
+                }
+                appScriptQueued = true;
+                appendScript('assets/js/app.js');
+            }
+
+            appendScript('assets/js/vendor-loader.js', ensureAppScriptLoaded, ensureAppScriptLoaded);
+        })();
+    </script>
 </body>
 </html>
