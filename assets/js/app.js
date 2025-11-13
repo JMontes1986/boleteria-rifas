@@ -10,6 +10,8 @@ const SECURE_CONFIG = {
     MAX_USERNAME_LENGTH: 50
 };
 
+const THEME_STORAGE_KEY = 'boleteria-theme-preference';
+
 // Estado de seguridad
 let securityState = {
     loginAttempts: 0,
@@ -2247,6 +2249,86 @@ function showAlert(message, type) {
     }, 5000);
 }
 
+function getStoredThemePreference() {
+    try {
+        return localStorage.getItem(THEME_STORAGE_KEY);
+    } catch (error) {
+        logSecurityEvent('THEME_STORAGE_ERROR', 'No se pudo leer la preferencia de tema almacenada', 'WARNING');
+        return null;
+    }
+}
+
+function storeThemePreference(theme) {
+    try {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (error) {
+        logSecurityEvent('THEME_STORAGE_ERROR', 'No se pudo guardar la preferencia de tema', 'WARNING');
+    }
+}
+
+function applyThemePreference(theme) {
+    const root = document.documentElement;
+    const resolvedTheme = theme === 'light' ? 'light' : 'dark';
+    root.setAttribute('data-theme', resolvedTheme);
+
+    const toggleButton = document.getElementById('themeToggleBtn');
+    if (toggleButton) {
+        const isLight = resolvedTheme === 'light';
+        toggleButton.textContent = isLight ? '🌙 Modo oscuro' : '☀️ Modo claro';
+        toggleButton.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+        toggleButton.title = isLight ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro';
+    }
+}
+
+function resolveInitialTheme() {
+    const storedTheme = getStoredThemePreference();
+    if (storedTheme === 'light' || storedTheme === 'dark') {
+        return storedTheme;
+    }
+
+    if (window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+
+    return 'dark';
+}
+
+function toggleThemePreference() {
+    const current = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    const next = current === 'light' ? 'dark' : 'light';
+    applyThemePreference(next);
+    storeThemePreference(next);
+    logSecurityEvent('THEME_CHANGE', `Modo ${next === 'light' ? 'claro' : 'oscuro'} activado`, 'INFO');
+}
+
+function initThemeToggle() {
+    const initialTheme = resolveInitialTheme();
+    applyThemePreference(initialTheme);
+    logSecurityEvent('THEME_INIT', `Tema ${initialTheme === 'light' ? 'claro' : 'oscuro'} aplicado`, 'INFO');
+
+    const toggleButton = document.getElementById('themeToggleBtn');
+    if (toggleButton) {
+        toggleButton.addEventListener('click', toggleThemePreference);
+    }
+
+    if (window.matchMedia) {
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: light)');
+        const handleChange = event => {
+            const storedTheme = getStoredThemePreference();
+            if (!storedTheme) {
+                const nextTheme = event.matches ? 'light' : 'dark';
+                applyThemePreference(nextTheme);
+                logSecurityEvent('THEME_AUTO', `Tema ${nextTheme === 'light' ? 'claro' : 'oscuro'} aplicado por preferencia del sistema`, 'INFO');
+            }
+        };
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', handleChange);
+        } else if (typeof mediaQuery.addListener === 'function') {
+            mediaQuery.addListener(handleChange);
+        }
+    }
+}
+
 // =========================
 // INICIALIZACIÓN SEGURA
 // =========================
@@ -2264,6 +2346,8 @@ document.addEventListener('vendor:error', function(event) {
 });
 
 document.addEventListener('DOMContentLoaded', function() {
+    initThemeToggle();
+    
     // Generar CAPTCHA inicial
     generateCaptcha();
 
