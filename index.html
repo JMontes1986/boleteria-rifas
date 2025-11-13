@@ -127,6 +127,12 @@
             border-color: rgba(34, 197, 94, 0.4);
         }
 
+        .connection-status.connecting {
+            background: rgba(250, 204, 21, 0.16);
+            color: #facc15;
+            border-color: rgba(250, 204, 21, 0.4);
+        }
+        
         .connection-status.disconnected {
             background: rgba(248, 113, 113, 0.18);
             color: #fca5a5;
@@ -992,7 +998,7 @@
         </div>
         <div class="topbar-right">
             <span class="topbar-meta">Versión 2.0</span>
-            <span class="connection-status disconnected" id="connectionStatus">🔴 Conectando...</span>
+            <span class="connection-status connecting" id="connectionStatus">🟡 Conectando...</span>
             <button type="button" class="btn-ghost theme-toggle" id="themeToggleBtn" aria-pressed="false" title="Cambiar a modo claro">☀️ Modo claro</button>
             <button class="btn-ghost" onclick="testConnection()" id="testConnBtn">Actualizar</button>
         </div>
