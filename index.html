@@ -13,446 +13,704 @@
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
+        :root {
+            --bg: #0b1120;
+            --bg-soft: #111827;
+            --card: #0f172a;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --border: #1f2937;
+            --border-strong: #334155;
+            --primary: #22c55e;
+            --primary-hover: #16a34a;
+            --accent: #38bdf8;
+            --danger: #f87171;
+            --warning: #fbbf24;
+            --shadow: 0 20px 40px rgba(15, 23, 42, 0.7);
+        }
+
+        *, *::before, *::after {
             box-sizing: border-box;
         }
 
         body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
             min-height: 100vh;
-            padding: 20px;
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: radial-gradient(circle at top, #111827 0, var(--bg) 40%, #020617 100%);
+            color: var(--text-main);
+            padding-bottom: 80px;
         }
 
-        .security-badge {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: #28a745;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
+        a {
+            color: inherit;
+        }
+
+        header.topbar {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 28px;
+            height: 64px;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+        }
+
+        .topbar-left, .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-mark {
+            font-size: 24px;
+        }
+
+        .topbar-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .topbar-meta {
             font-size: 12px;
-            font-weight: bold;
-            z-index: 1001;
+            color: var(--text-muted);
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
+        .connection-status {
+            padding: 6px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: rgba(148, 163, 184, 0.08);
+            color: var(--text-muted);
+            transition: background 0.2s ease;
         }
 
-        .header {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-            color: white;
-            padding: 20px;
-            text-align: center;
+        .connection-status.connected {
+            background: rgba(34, 197, 94, 0.16);
+            color: #4ade80;
+            border-color: rgba(34, 197, 94, 0.4);
         }
 
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+        .connection-status.disconnected {
+            background: rgba(248, 113, 113, 0.18);
+            color: #fca5a5;
+            border-color: rgba(248, 113, 113, 0.45);
+        }
+
+        .app-shell {
+            max-width: 1120px;
+            margin: 32px auto 0;
+            padding: 0 16px 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: var(--shadow);
+        }
+
+        .hero-card {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.14), rgba(56, 189, 248, 0.12));
+            border: 1px solid rgba(56, 189, 248, 0.22);
+        }
+
+        .card-title {
+            margin: 0 0 6px;
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .hero-card .card-title {
+            font-size: 24px;
+        }
+
+        .card-subtitle {
+            margin: 0;
+            font-size: 14px;
+            color: var(--text-muted);
         }
 
         .tabs {
             display: flex;
-            background: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
+            gap: 8px;
+            padding: 4px;
+            background: rgba(15, 23, 42, 0.85);
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 12px 24px rgba(2, 6, 23, 0.4);
+            width: max-content;
         }
 
         .tab {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
             border: none;
-            background: none;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.3s;
+            padding: 10px 18px;
+            background: transparent;
+            color: var(--text-muted);
+            border-radius: 999px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease, color 0.2s ease;
         }
 
         .tab:hover {
-            background: #e9ecef;
+            background: rgba(56, 189, 248, 0.12);
+            color: var(--text-main);
         }
 
         .tab.active {
-            background: #007bff;
-            color: white;
+            background: rgba(34, 197, 94, 0.16);
+            color: #4ade80;
         }
 
         .tab.hidden {
             display: none;
         }
 
+        .tab-container {
+            display: flex;
+            justify-content: center;
+        }
+        
         .tab-content {
             display: none;
-            padding: 30px;
+            margin-top: 16px;
         }
 
         .tab-content.active {
             display: block;
         }
 
-        .admin-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border: 2px solid #007bff;
+        .admin-section,
+        .config-section {
+            background: rgba(8, 12, 24, 0.82);
+            border: 1px solid rgba(56, 189, 248, 0.12);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 14px 36px rgba(2, 6, 23, 0.6);
         }
 
-        .admin-section h3 {
-            color: #007bff;
-            margin-bottom: 15px;
+        .admin-section h3,
+        .config-section h3 {
+            margin: 0 0 16px;
+            color: var(--text-main);
+            font-size: 18px;
         }
 
         .admin-toolbar {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
             flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-            padding: 15px 20px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #f8f9fa, #e2e6ea);
-            border: 1px solid #ced4da;
         }
 
         .admin-toolbar .session-info {
-            font-weight: bold;
-            color: #343a40;
+            position: static;
+            padding: 0;
+            background: none;
+            font-size: 14px;
+            color: var(--text-muted);
         }
 
         .admin-toolbar .session-info span {
-            color: #007bff;
-        }
-        
-        .config-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background: #e3f2fd;
-            border-radius: 10px;
-            border: 2px solid #2196f3;
-        }
-
-        .config-section h3 {
-            color: #1976d2;
-            margin-bottom: 15px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #007bff;
+            color: #38f2ff;
         }
 
         .form-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: #020617;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: var(--text-main);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px 16px;
+            margin-top: 16px;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: #6b7280;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.35);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 8px;
+        }
+
+        .btn,
+        button.btn-primary,
+        button.btn-success,
+        button.btn-danger,
+        button.btn-info,
+        button.btn-warning {
+            border-radius: 999px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            padding: 10px 18px;
+            font-size: 14px;
+        }
+
+        .btn-primary,
+        button.btn-primary {
+            background: var(--primary);
+            color: #0f172a;
+        }
+
+        .btn-primary:hover,
+        button.btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(34, 197, 94, 0.25);
+        }
+
+        .btn-success,
+        button.btn-success {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+
+        .btn-success:hover,
+        button.btn-success:hover {
+            background: #0ea5e9;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger,
+        button.btn-danger {
+            background: rgba(248, 113, 113, 0.9);
+            color: #0f172a;
+        }
+
+        .btn-danger:hover,
+        button.btn-danger:hover {
+            background: #f87171;
+            transform: translateY(-1px);
+        }
+
+        .btn-info,
+        button.btn-info {
+            background: rgba(56, 189, 248, 0.85);
+            color: #0f172a;
+        }
+
+        .btn-info:hover,
+        button.btn-info:hover {
+            background: #0ea5e9;
+            transform: translateY(-1px);
+        }
+
+        .btn-warning,
+        button.btn-warning {
+            background: rgba(251, 191, 36, 0.9);
+            color: #0f172a;
+        }
+
+        .btn-warning:hover,
+        button.btn-warning:hover {
+            background: #fbbf24;
+            transform: translateY(-1px);
+        }
+
+        .btn-ghost {
+            border-radius: 999px;
+            padding: 9px 16px;
+            border: 1px solid var(--border-strong);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .btn-ghost:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .seller-dashboard {
+            display: flex;
+            flex-direction: column;
             gap: 20px;
         }
 
-        .current-config {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 15px 0;
+        .dashboard-columns {
+            display: grid;
+            grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+            gap: 20px;
         }
 
-        .current-config h4 {
-            color: #155724;
-            margin-bottom: 10px;
+        .dashboard-column {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
         }
 
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            transition: all 0.3s;
-            margin: 5px;
+        .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
         }
 
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
+        .pill {
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(148, 163, 184, 0.25);
         }
 
-        .btn-primary {
-            background: #007bff;
-            color: white;
+        .pill-green {
+            background: rgba(34, 197, 94, 0.14);
+            border-color: rgba(34, 197, 94, 0.35);
+            color: #4ade80;
         }
 
-        .btn-primary:hover:not(:disabled) {
-            background: #0056b3;
-            transform: translateY(-2px);
+        .pill-blue {
+            background: rgba(56, 189, 248, 0.14);
+            border-color: rgba(56, 189, 248, 0.4);
+            color: #38bdf8;
         }
 
-        .btn-success {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-success:hover:not(:disabled) {
-            background: #1e7e34;
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-            background: #c82333;
-            transform: translateY(-2px);
-        }
-
-        .btn-info {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .btn-info:hover:not(:disabled) {
-            background: #138496;
-            transform: translateY(-2px);
-        }
-
-        /* Estadísticas más pequeñas para el dashboard */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
         }
 
-        .stats-grid.compact {
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-bottom: 15px;
+        .stat {
+            padding: 12px 16px;
+            border-radius: 14px;
+            background: #020617;
+            border: 1px solid rgba(15, 23, 42, 0.9);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 20px;
+            font-weight: 600;
+            margin-top: 4px;
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
+            background: rgba(8, 11, 22, 0.88);
+            border-radius: 18px;
+            padding: 18px;
             text-align: center;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-        }
-
-        .stat-card.compact {
-            padding: 10px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: 0 16px 30px rgba(2, 6, 23, 0.55);
         }
 
         .stat-card h3 {
-            font-size: 1.8em;
-            margin-bottom: 8px;
-        }
-
-        .stat-card.compact h3 {
-            font-size: 1.4em;
-            margin-bottom: 5px;
+            margin: 0 0 6px;
+            font-size: 22px;
+            color: var(--text-main);
         }
 
         .stat-card p {
-            font-size: 0.9em;
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-muted);
         }
 
-        .stat-card.compact p {
-            font-size: 0.8em;
+        .stat-card.compact {
+            padding: 14px;
+        }
+
+        .stats-grid.compact {
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        }
+
+        .sales-by-seller {
+            margin: 24px 0;
+        }
+
+        .sales-by-seller .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+        }
+
+        .sales-by-seller .stat-card small {
+            display: block;
+            margin-top: 6px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .ticket-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .tickets-section.dashboard {
+            margin-top: 24px;
+            background: rgba(8, 11, 22, 0.85);
+            border-radius: 18px;
+            padding: 20px 24px;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            box-shadow: var(--shadow);
+        }
+
+        .tickets-section.dashboard h4 {
+            margin: 0 0 10px;
+            font-size: 18px;
+        }
+
+        .tickets-section.dashboard p {
+            margin: 0 0 16px;
+            color: var(--text-muted);
+            font-size: 13px;
         }
 
         .ticket-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-            gap: 3px;
-            margin-top: 15px;
-            max-height: 500px;
+            grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+            gap: 4px;
+            max-height: 520px;
             overflow-y: auto;
-            padding: 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 10px;
-            background: #f8f9fa;
+            padding: 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            background: rgba(8, 11, 22, 0.9);
         }
 
-        /* Grid más grande para el dashboard */
         .ticket-grid.dashboard {
-            max-height: 600px;
-            grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
-            gap: 4px;
-            padding: 20px;
+            max-height: 640px;
+            grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
         }
 
         .ticket {
-            width: 45px;
-            height: 35px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 11px;
+            height: 42px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid transparent;
         }
 
-        .ticket.dashboard {
-            width: 50px;
-            height: 40px;
-            font-size: 12px;
+        .ticket:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 18px rgba(2, 6, 23, 0.65);
         }
 
         .ticket.disponible {
-            background: #28a745;
-            color: white;
+            background: rgba(34, 197, 94, 0.18);
+            border-color: rgba(34, 197, 94, 0.35);
+            color: #4ade80;
         }
 
         .ticket.vendida {
-            background: #dc3545;
-            color: white;
+            background: rgba(248, 113, 113, 0.22);
+            border-color: rgba(248, 113, 113, 0.45);
+            color: #fca5a5;
         }
         
         .ticket.reservada {
-            background: #ffc107;
-            color: #212529;
+            background: rgba(251, 191, 36, 0.18);
+            border-color: rgba(251, 191, 36, 0.45);
+            color: #fbbf24;
             animation: pulse 1.2s infinite;
         }
 
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 rgba(255, 193, 7, 0.7); }
-            50% { box-shadow: 0 0 12px rgba(255, 193, 7, 0.9); }
-            100% { box-shadow: 0 0 0 rgba(255, 193, 7, 0.7); }
+            0% { box-shadow: 0 0 0 rgba(251, 191, 36, 0.1); }
+            50% { box-shadow: 0 0 18px rgba(251, 191, 36, 0.35); }
+            100% { box-shadow: 0 0 0 rgba(251, 191, 36, 0.1); }
         }
 
-        .ticket:hover {
-            transform: scale(1.1);
-            z-index: 10;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 13px;
         }
 
-        .tickets-section {
-            margin-top: 20px;
+        .table thead {
+            background: #020617;
         }
 
-        .tickets-section h4 {
-            margin-bottom: 10px;
-            color: #333;
-            font-size: 1.2em;
+        .table th,
+        .table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
         }
 
-        .tickets-section.dashboard h4 {
-            font-size: 1.4em;
-            margin-bottom: 15px;
+        .table th {
+            font-weight: 600;
+            color: #e5e7eb;
         }
 
-        .tickets-section p {
-            margin-bottom: 15px;
-            color: #666;
-            font-size: 0.9em;
+        .table tbody tr:nth-child(even) {
+            background: rgba(15, 23, 42, 0.6);
         }
 
-        /* Ventas por vendedor más compacto en dashboard */
-        .sales-by-seller {
-            margin-bottom: 15px;
+        .table tbody tr:hover {
+            background: rgba(15, 23, 42, 0.8);
         }
 
-        .sales-by-seller h4 {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-            color: #333;
+        .table .empty-row td {
+            text-align: center;
+            color: var(--text-muted);
+            padding: 24px 12px;
         }
 
-        .sales-by-seller .stats-grid {
-            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-            gap: 8px;
+        .loading {
+            text-align: center;
+            padding: 24px 0;
+            color: var(--text-muted);
         }
 
-        .sales-by-seller .stat-card {
-            padding: 8px;
+        .spinner {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 4px solid rgba(148, 163, 184, 0.12);
+            border-top-color: var(--accent);
+            margin: 0 auto 16px;
+            animation: spin 1s linear infinite;
         }
 
-        .sales-by-seller .stat-card h3 {
-            font-size: 1.2em;
-            margin-bottom: 3px;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
-        .sales-by-seller .stat-card p {
-            font-size: 0.75em;
+        .security-info {
+            background: rgba(56, 189, 248, 0.08);
+            border-left: 3px solid var(--accent);
+            padding: 16px 20px;
+            border-radius: 14px;
+            margin-bottom: 20px;
         }
 
-        .sales-by-seller .stat-card small {
-            font-size: 0.7em;
+        .security-info h4 {
+            margin: 0 0 10px;
+            color: var(--accent);
+        }
+
+        .security-info ul {
+            padding-left: 18px;
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .captcha-container {
+            border: 1px dashed rgba(56, 189, 248, 0.4);
+            border-radius: 14px;
+            padding: 16px;
+            background: rgba(15, 23, 42, 0.6);
+            margin: 18px 0;
         }
 
         .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin: 10px 0;
-            font-weight: bold;
+            padding: 14px 18px;
+            border-radius: 12px;
+            font-weight: 600;
+            margin: 12px 0;
         }
 
         .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+            background: rgba(34, 197, 94, 0.14);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.35);
         }
 
         .alert-danger {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+            background: rgba(248, 113, 113, 0.14);
+            color: #fca5a5;
+            border: 1px solid rgba(248, 113, 113, 0.3);
         }
 
         .alert-info {
-            background: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+            background: rgba(56, 189, 248, 0.12);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
         }
 
         .alert-warning {
-            background: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
+            background: rgba(251, 191, 36, 0.12);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
         }
 
-         .modal {
+        .session-info {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.6);
+            right: 24px;
+            bottom: 24px;
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 14px;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            box-shadow: 0 20px 40px rgba(2, 6, 23, 0.6);
+        }
+
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.75);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -464,221 +722,128 @@
         }
 
         .modal-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            width: 300px;
-            text-align: center;
+            width: min(360px, 90vw);
+            background: var(--card);
+            border-radius: 18px;
+            padding: 24px;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            box-shadow: var(--shadow);
         }
 
         .modal-content h3 {
-            margin-bottom: 15px;
+            margin: 0 0 16px;
         }
 
         .modal-content label {
             display: block;
-            margin-bottom: 10px;
-            text-align: left;
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
         }
 
-        .modal-content input[type="tel"],
-        .modal-content input[list] {
+        .modal-content input[list],
+        .modal-content input[type="tel"] {
+            margin-top: 6px;
             width: 100%;
-            padding: 6px;
-            margin-top: 5px;
         }
 
         .modal-actions {
             display: flex;
             justify-content: space-between;
-            margin-top: 15px;
+            gap: 12px;
+            margin-top: 18px;
         }
 
-        .connection-controls {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
+        footer.app-footer {
+            margin-top: 24px;
             text-align: center;
-        }
-
-        .connection-status {
-            padding: 10px 15px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .connection-status.connected {
-            background: #28a745;
-        }
-
-        .connection-status.disconnected {
-            background: #dc3545;
-        }
-
-        .test-connection-btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 15px;
-            cursor: pointer;
             font-size: 12px;
-            font-weight: bold;
-            background: #17a2b8;
-            color: white;
-            transition: all 0.3s;
-            display: block;
-            width: 100%;
+            color: var(--text-muted);
         }
 
-        .test-connection-btn:hover:not(:disabled) {
-            background: #138496;
-            transform: translateY(-1px);
-        }
-
-        .test-connection-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 20px;
-            font-size: 18px;
-        }
-
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #3498db;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 2s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        .security-info {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-            border-left: 4px solid #28a745;
-        }
-
-        .security-info h4 {
-            color: #28a745;
-            margin-bottom: 10px;
-        }
-
-        .captcha-container {
-            margin: 15px 0;
-            padding: 15px;
-            border: 2px dashed #007bff;
-            border-radius: 8px;
-            text-align: center;
-            background: #f8f9fa;
-        }
-
-        .session-info {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 12px;
-            z-index: 1000;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                max-width: 100%;
-                margin: 0;
-                border-radius: 0;
-            }
-
-            .form-row {
-                grid-template-columns: 1fr;
-                gap: 15px;
+        @media (max-width: 1024px) {
+            .dashboard-columns {
+                grid-template-columns: minmax(0, 1fr);
             }
             
             .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
-            
-            .stats-grid.compact {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .ticket-grid {
-                grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
-                gap: 2px;
-                padding: 10px;
-            }
-            
-            .ticket-grid.dashboard {
-                grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
-            }
-            
-            .ticket {
-                width: 40px;
-                height: 30px;
-                font-size: 10px;
             }
 
-            .ticket.dashboard {
-                width: 45px;
-                height: 35px;
-                font-size: 11px;
+        @media (max-width: 720px) {
+            header.topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+                height: auto;
+                padding: 12px 18px 16px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .form-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+            
+            .form-actions {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .connection-controls {
-                position: static;
-                margin: 20px auto;
-                width: 200px;
+            .form-actions .btn-primary,
+            .form-actions .btn-ghost {
+                width: 100%;
+                text-align: center;
             }
 
-            .sales-by-seller .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .stats-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+
+            .session-info {
+                left: 16px;
+                right: 16px;
+                bottom: 16px;
             }
         }
     </style>
-</head>
+    </head>
 <body>
-    <div class="security-badge">🔒 SECURED</div>
-    
-    <div class="connection-controls">
-        <div class="connection-status" id="connectionStatus">
-            🔴 Conectando...
+    <header class="topbar">
+        <div class="topbar-left">
+            <span class="logo-mark">🎟️</span>
+            <div>
+                <div class="topbar-title">Boletería &amp; Rifas</div>
+                <div class="topbar-meta">Panel centralizado para eventos en vivo</div>
+            </div>
         </div>
-        <button class="test-connection-btn" onclick="testConnection()" id="testConnBtn">
-            🔄 Probar Conexión
-        </button>
-    </div>
+        <div class="topbar-right">
+            <span class="topbar-meta">Versión 1.0</span>
+            <span class="connection-status disconnected" id="connectionStatus">🔴 Conectando...</span>
+            <button class="btn-ghost" onclick="testConnection()" id="testConnBtn">Actualizar</button>
+        </div>
+    </header>
 
     <div class="session-info" id="sessionInfo">
         Sesión: No autenticado
     </div>
 
-    <div class="container">
-        <div class="header">
-            <h1>🎫 Sistema de Venta de Boletería @J.montes86</h1>
-            <p>Gestión de Rifas</p>
-        </div>
+    <main class="app-shell">
+        <section class="card hero-card">
+            <h1 class="card-title">Sistema de boletería moderno</h1>
+            <p class="card-subtitle">Gestiona rifas, vendedores y ventas en un entorno sobrio y claro.</p>
+        </section>
 
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('admin')">👨‍💼 Administrador</button>
-            <button class="tab" onclick="showTab('seller')">🛒 Vendedor</button>
-            <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
-            <button class="tab hidden" id="securityTab" onclick="showTab('security')">🔒 Seguridad</button>
+        <div class="tab-container">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('admin')">👨‍💼 Administrador</button>
+                <button class="tab" onclick="showTab('seller')">🛒 Vendedor</button>
+                <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
+                <button class="tab hidden" id="securityTab" onclick="showTab('security')">🔒 Seguridad</button>
+            </div>
         </div>
 
         <!-- Pestaña Administrador -->
@@ -741,7 +906,7 @@
                         <div class="form-group">
                             <label>Precio por Boleta ($):</label>
                             <input type="number" id="ticketPriceInput" min="100" max="100000" step="50" value="1000" placeholder="Precio en pesos">
-                            <small style="color: #666; font-size: 0.8em;">Rango: $100 - $100,000</small>
+                            <small style="color: var(--text-muted); font-size: 0.8em;">Rango: $100 - $100,000</small>
                         </div>
                     </div>
                     
@@ -751,7 +916,7 @@
                         <button class="btn btn-warning" onclick="previewChanges()" id="previewBtn">👁️ Vista Previa</button>
                     </div>
                     
-                    <div id="configPreview" style="display: none; margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                    <div id="configPreview" style="display: none; margin-top: 15px; padding: 15px; background: rgba(251, 191, 36, 0.12); border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.3);">
                         <h5>🔍 Vista Previa de Cambios:</h5>
                         <p id="previewText"></p>
                     </div>
@@ -769,7 +934,7 @@
                      <div class="form-group">
                         <label>Contraseña Temporal:</label>
                         <input type="password" id="sellerPassword" placeholder="Contraseña para el vendedor" maxlength="100">
-                        <small style="color: #666; font-size: 0.8em;">Debe tener al menos 6 caracteres.</small>
+                        <small style="color: var(--text-muted); font-size: 0.8em;">Debe tener al menos 6 caracteres.</small>
                     </div>
 
                     <div class="form-group">
@@ -777,7 +942,7 @@
                         <input type="password" id="sellerPasswordConfirm" placeholder="Repite la contraseña" maxlength="100">
                     </div>
 
-                    <p style="font-size: 0.85em; color: #555;">El usuario se generará automáticamente con el nombre del vendedor en minúsculas y sin espacios.</p>
+                    <p style="font-size: 0.85em; color: var(--text-muted);">El usuario se generará automáticamente con el nombre del vendedor en minúsculas y sin espacios.</p>
                     
                     <button class="btn btn-success" onclick="addSeller()" id="addSellerBtn">Agregar Vendedor</button>
                     <button class="btn btn-danger" onclick="resetSystem()" id="resetBtn">Reiniciar Sistema</button>
@@ -806,42 +971,115 @@
                 <div id="vendorLoginMessage" style="margin-top: 10px; color: #dc3545;"></div>
             </div>
 
-            <div id="sellerPanel" style="display: none;">
-                <div class="admin-section" style="margin-bottom: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div id="sellerPanel" class="seller-dashboard" style="display: none;">
+                <section class="card">
+                    <div class="admin-toolbar" style="margin-bottom: 0;">
                         <div>
-                            <h3 id="sellerWelcome">Bienvenido</h3>
-                            <p style="margin-top: 5px; color: #555;">Selecciona una boleta disponible para iniciar el proceso de venta.</p>
+                            <h3 id="sellerWelcome" class="card-title" style="margin-bottom: 4px;">Bienvenido</h3>
+                            <p class="card-subtitle">Registra boletas ingresando los datos o usando el selector visual.</p>
                         </div>
-                        <button class="btn btn-danger" onclick="logoutVendor()" id="vendorLogoutBtn">Cerrar Sesión</button>
+                        <button class="btn-danger" onclick="logoutVendor()" id="vendorLogoutBtn">Cerrar sesión</button>
                     </div>
-                    <div id="sellerReservationNotice" style="margin-top: 10px; color: #856404; display: none; background: #fff3cd; padding: 10px; border-radius: 8px;">
+                    <div id="sellerReservationNotice" class="alert alert-warning" style="display: none; margin-top: 16px;">
                         Existen boletas reservadas por ti que fueron liberadas automáticamente al cerrar tu sesión anterior.
                     </div>
-                </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3 id="availableCount">-</h3>
-                        <p>Boletas Disponibles</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 id="soldCount">-</h3>
-                        <p>Boletas Vendidas</p>
-                    </div>
-                    <div class="stat-card">
-                        <h3 id="revenueCount">$0</h3>
-                        <p>Ingresos Totales</p>
-                    </div>
-                </div>
+                </section>
 
-                <div class="tickets-section">
-                    <h4>Boletas (Click para vender/liberar)</h4>
-                    <p><small>🟢 Verde = Disponible | 🟡 Amarillo = En proceso | 🔴 Rojo = Vendida | Precio: $<span id="currentPriceDisplay">1,000</span> c/u</small</p>
-                    <div id="ticketGridLoading" class="loading">
-                        <div class="spinner"></div>
-                        Cargando boletas...
+                <div class="dashboard-columns">
+                    <div class="dashboard-column">
+                        <article class="card event-card">
+                            <h2 class="card-title" id="eventTitleDisplay">Rifa principal</h2>
+                            <p class="card-subtitle" id="eventSubtitleDisplay">Control de venta de boletas</p>
+                            <div class="pill-row">
+                                <span class="pill pill-green" id="eventStatusPill">Activa</span>
+                                <span class="pill pill-blue" id="eventDatePill">Sorteo próximo</span>
+                            </div>
+                        </article>
+
+                        <article class="card">
+                            <h2 class="card-title">Registrar boleta</h2>
+                            <form id="ticketSaleForm" class="form-grid">
+                                <div class="form-group">
+                                    <label for="ticketNumberInput">Número de boleta</label>
+                                    <input type="number" id="ticketNumberInput" min="1" placeholder="Ej: 123" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="buyerNameInput">Nombre del comprador</label>
+                                    <input type="text" id="buyerNameInput" placeholder="Nombre completo" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="buyerPhoneInput">Teléfono / WhatsApp</label>
+                                    <input type="tel" id="buyerPhoneInput" placeholder="+57 300 000 0000" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="ticketValueInput">Valor pagado</label>
+                                    <input type="number" id="ticketValueInput" min="0" placeholder="$ 0">
+                                </div>
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-primary">Registrar boleta</button>
+                                    <button type="button" class="btn-ghost" id="ticketFormReset">Limpiar</button>
+                                </div>
+                            </form>
+                        </article>
+
+                        <article class="card">
+                            <div class="ticket-card-header">
+                                <div>
+                                    <h2 class="card-title">Selector de boletas</h2>
+                                    <p class="card-subtitle">Haz clic sobre una boleta para venderla o liberarla.</p>
+                                </div>
+                                <span class="pill pill-blue">Valor actual: $<span id="currentPriceDisplay">1,000</span></span>
+                            </div>
+                            <div id="ticketGridLoading" class="loading">
+                                <div class="spinner"></div>
+                                Cargando boletas...
+                            </div>
+                            <div class="ticket-grid" id="ticketGrid" style="display: none;"></div>
+                        </article>
                     </div>
-                    <div class="ticket-grid" id="ticketGrid" style="display: none;"></div>
+                    
+                    <div class="dashboard-column">
+                        <article class="card summary-card">
+                            <h2 class="card-title">Resumen rápido</h2>
+                            <div class="stats-grid">
+                                <div class="stat">
+                                    <span class="stat-label">Total boletas</span>
+                                    <span class="stat-value" id="totalTicketsStat">-</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Vendidas</span>
+                                    <span class="stat-value" id="soldCount">-</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Disponibles</span>
+                                    <span class="stat-value" id="availableCount">-</span>
+                                </div>
+                                <div class="stat">
+                                    <span class="stat-label">Recaudado</span>
+                                    <span class="stat-value" id="revenueCount">$0</span>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="card table-card">
+                            <h2 class="card-title">Últimas boletas registradas</h2>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Comprador</th>
+                                        <th>Fecha</th>
+                                        <th>Valor</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="latestTicketsBody">
+                                    <tr class="empty-row">
+                                        <td colspan="4">Sin movimientos recientes</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </article>
+                    </div>
                 </div>
             </div>
         </div>
@@ -876,8 +1114,8 @@
             <!-- Grid de boletas más prominente -->
             <div class="tickets-section dashboard">
                 <h4>🎫 Estado de Todas las Boletas</h4>
-                 <p><small>🟢 Verde = Disponible | 🟡 Amarillo = En proceso | 🔴 Rojo = Vendida | Total: <span id="dashTotalTickets">1000</span> boletas</small</p>
-                <div id="dashboardLoading" class="loading">
+                 <p><small>🟢 Verde = Disponible | 🟡 Amarillo = En proceso | 🔴 Rojo = Vendida | Total: <span id="dashTotalTickets">1000</span> boletas</small></p>
+                    <div id="dashboardLoading" class="loading">
                     <div class="spinner"></div>
                     Cargando dashboard...
                 </div>
@@ -888,7 +1126,7 @@
         <!-- Pestaña Seguridad (SOLO VISIBLE PARA ADMIN) -->
         <div id="security" class="tab-content">
             <h3>🔒 Panel de Seguridad</h3>
-            
+
             <div class="security-info">
                 <h4>Medidas de Seguridad Implementadas</h4>
                 <ul>
@@ -918,12 +1156,16 @@
                 </div>
             </div>
 
-            <div id="securityLogs" style="max-height: 300px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 8px;">
+            <div id="securityLogs" style="max-height: 300px; overflow-y: auto; background: rgba(8, 11, 22, 0.8); padding: 18px; border-radius: 16px; border: 1px solid rgba(148, 163, 184, 0.18);">
                 <h4>Logs de Seguridad en Tiempo Real</h4>
                 <div id="logsList"></div>
             </div>
         </div>
-    </div>
+
+        <footer class="app-footer">
+            Sistema de boletería – Colgemelli / Año.
+        </footer>
+    </main>
 
     <div id="alerts"></div>
     <div id="phoneModal" class="modal hidden">
@@ -931,9 +1173,7 @@
             <h3>📞 Ingresar Celular</h3>
             <label>Código de área:
                 <input list="areaCodeList" id="modalAreaCode" value="+57">
-                <datalist id="areaCodeList">
-                    <datalist id="areaCodeList"></datalist>
-                </datalist>
+                <datalist id="areaCodeList"></datalist>
             </label>
             <label>Número de celular:
                 <input type="tel" id="modalPhone" placeholder="1234567890">
