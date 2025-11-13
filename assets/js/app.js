@@ -868,6 +868,7 @@ function initSupabase() {
         supabaseClient = createClient(serviceUrl, anonKey);
         supabaseLibraryPendingLogged = false;
 
+        updateConnectionStatus('connected');
         showInlineStatus('Conexión segura establecida', { state: 'success', duration: 1100 });
         
         logSecurityEvent('SUPABASE_INIT', 'Cliente Supabase inicializado correctamente');
@@ -1839,6 +1840,9 @@ async function testConnection() {
 // Actualizar estado de conexión
 function updateConnectionStatus(status) {
     const statusEl = document.getElementById('connectionStatus');
+    if (!statusEl) {
+        return;
+    }
     if (status === 'connected') {
         statusEl.className = 'connection-status connected';
         statusEl.textContent = '🟢 Conectado';
