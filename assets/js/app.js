@@ -32,6 +32,7 @@ let vendorSession = { isAuthenticated: false, seller: null };
 let realtimeInitialized = false;
 let realtimeChannels = [];
 let supabaseLibraryPendingLogged = false;
+let supabaseInitRetryTimeout = null;
 const inlineStatusController = { timer: null };
 
 const AREA_CODES = [
@@ -861,10 +862,20 @@ function initSupabase() {
             }
             showInlineStatus('Esperando librerías de seguridad...', { state: 'info', duration: 900 });
             updateConnectionStatus('connecting');
+            if (supabaseInitRetryTimeout === null) {
+                supabaseInitRetryTimeout = setTimeout(() => {
+                    supabaseInitRetryTimeout = null;
+                    initSupabase();
+                }, 600);
+            }
             return null;
         }
 
         const { createClient } = supabase;
+        if (supabaseInitRetryTimeout !== null) {
+            clearTimeout(supabaseInitRetryTimeout);
+            supabaseInitRetryTimeout = null;
+        }
         supabaseClient = createClient(serviceUrl, anonKey);
         supabaseLibraryPendingLogged = false;
 
