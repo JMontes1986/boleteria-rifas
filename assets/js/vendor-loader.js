@@ -15,11 +15,22 @@
         document.dispatchEvent(new CustomEvent(eventName, { detail }));
     }
 
+    function ensureSupabaseAvailable() {
+        return typeof window.supabase === 'object' &&
+            window.supabase !== null &&
+            typeof window.supabase.createClient === 'function';
+    }
+    
     const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js';
     script.async = false;
+    script.crossOrigin = 'anonymous';
     script.onload = function () {
-        notify('vendor:loaded');
+        if (ensureSupabaseAvailable()) {
+            notify('vendor:loaded');
+        } else {
+            notify('vendor:error', { message: 'La biblioteca segura no expuso la API esperada.' });
+        }
     };
     script.onerror = function (error) {
         notify('vendor:error', { message: 'No se pudo cargar la biblioteca segura', error });
