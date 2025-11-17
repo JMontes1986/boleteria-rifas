@@ -25,9 +25,16 @@
             '--text-muted': colors.textMuted,
             '--border': colors.border,
             '--border-strong': colors.borderStrong,
+            '--panel-border': colors.panelBorder,
+            '--panel-border-strong': colors.panelBorderStrong,
             '--primary': colors.primary,
             '--primary-hover': colors.primaryHover || colors.primary,
             '--accent': colors.accent,
+            '--danger': colors.danger,
+            '--warning': colors.warning,
+            '--info': colors.info,
+            '--success': colors.success,
+            '--success-strong': colors.successStrong || colors.success,
             '--shadow': colors.shadow
         };
 
@@ -37,9 +44,31 @@
             }
         });
 
-        if (colors.backgroundGradient) {
-            document.body.style.background = colors.backgroundGradient;
-        }
+        const moreTokens = {
+            '--surface-strong': colors.surfaceStrong,
+            '--surface-soft': colors.surfaceSoft,
+            '--surface-overlay': colors.surfaceOverlay,
+            '--topbar-bg': colors.topbarBackground,
+            '--topbar-bg-light': colors.topbarBackgroundLight,
+            '--topbar-border': colors.topbarBorder,
+            '--topbar-border-light': colors.topbarBorderLight,
+            '--footer-text': colors.footerText,
+            '--button-text': colors.buttonText,
+            '--ticket-available': colors.ticketAvailable,
+            '--ticket-available-strong': colors.ticketAvailableStrong,
+            '--ticket-reserved': colors.ticketReserved,
+            '--ticket-reserved-strong': colors.ticketReservedStrong,
+            '--ticket-sold': colors.ticketSold,
+            '--ticket-sold-strong': colors.ticketSoldStrong,
+            '--ticket-hover-shadow': colors.ticketHoverShadow,
+            '--background-gradient': colors.backgroundGradient
+        };
+
+        Object.entries(moreTokens).forEach(([variable, value]) => {
+            if (value) {
+                root.style.setProperty(variable, value);
+            }
+        });
     }
 
     function applyBranding(config = {}) {
@@ -91,6 +120,36 @@
             heroCard.style.backgroundSize = 'cover';
             heroCard.style.backgroundPosition = 'center';
         }
+        
+        const logoMark = document.querySelector('.logo-mark');
+        if (logoMark && branding.logoSymbol) {
+            logoMark.textContent = branding.logoSymbol;
+        }
+
+        const logoImage = document.querySelector('.logo-image');
+        const logoSrc = resolvePath(assets.logo || branding.logo);
+        if (logoImage) {
+            if (logoSrc) {
+                logoImage.src = logoSrc;
+                logoImage.alt = branding.logoAlt || branding.topbarTitle || 'Logo';
+                logoImage.classList.add('is-visible');
+                logoMark && logoMark.classList.add('hidden');
+            } else {
+                logoImage.removeAttribute('src');
+                logoImage.classList.remove('is-visible');
+                logoMark && logoMark.classList.remove('hidden');
+            }
+        }
+    }
+
+    function applyTypography(typography = {}) {
+        const root = document.documentElement;
+        if (typography.fontFamily) {
+            root.style.setProperty('--font-body', typography.fontFamily);
+        }
+        if (typography.headingFont) {
+            root.style.setProperty('--font-heading', typography.headingFont);
+        }
     }
 
     function renderSiteNotFound(data) {
@@ -134,6 +193,7 @@
     window.SiteLoader = {
         applyBranding,
         applyColorPalette,
+        applyTypography,
         renderSiteNotFound,
         resolveSiteFromPath
     };
