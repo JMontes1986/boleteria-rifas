@@ -56,7 +56,7 @@
             '--info': colors.info,
             '--success': colors.success,
             '--success-strong': colors.successStrong || colors.success,
-            ''--shadow': colors.shadow,
+            '--shadow': colors.shadow,
             '--surface-strong': colors.surfaceStrong,
             '--surface-soft': colors.surfaceSoft,
             '--surface-overlay': colors.surfaceOverlay,
