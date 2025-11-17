@@ -39,7 +39,7 @@
                 <div>
                     <p class="eyebrow">Sitios existentes</p>
                     <h2 class="section-title">Catálogo detectado</h2>
-                    <p class="section-subtitle">Se enumeran las entradas presentes en <code>assets/sites/index.json</code>.</p>
+                    <p class="section-subtitle">Se enumeran las entradas presentes en <code>assets/sites/index.json</code>. Ahora puedes revisar acciones rápidas o depurar el índice.</p>
                 </div>
                 <div class="section-actions">
                     <button id="reloadSites" class="btn btn-secondary">Actualizar listado</button>
@@ -63,6 +63,31 @@
                 </div>
             </div>
             <div id="siteDetails" class="admin-hub-detail"></div>
+            <div id="siteActions" class="admin-hub-actions" style="display:none;"></div>
+        </section>
+
+        <section class="card admin-hub-section" id="indexChangesSection" style="display:none;">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Cambios locales</p>
+                    <h2 class="section-title">Próxima versión de index.json</h2>
+                    <p class="section-subtitle">Las acciones sobre el listado generan un JSON listo para reemplazar el archivo original.</p>
+                </div>
+                <div class="section-actions">
+                    <button id="copyIndexFull" class="btn btn-secondary" disabled>Copiar JSON completo</button>
+                    <button id="downloadIndexFull" class="btn btn-primary" disabled>Descargar index.json</button>
+                </div>
+            </div>
+            <div class="admin-hub-preview">
+                <div class="preview-header">
+                    <div>
+                        <p class="eyebrow">Contenido generado</p>
+                        <h3 class="section-title">Vista previa</h3>
+                    </div>
+                    <span class="badge badge-success" id="indexChangesBadge">Sin cambios pendientes</span>
+                </div>
+                <pre id="indexFullPreview" class="code-block"></pre>
+            </div>
         </section>
 
         <section class="card admin-hub-section">
