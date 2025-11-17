@@ -1,0 +1,14 @@
+[build]
+  publish = "."
+
+# Serve static assets directly before applying SPA fallback
+[[redirects]]
+  from = "/assets/*"
+  to = "/assets/:splat"
+  status = 200
+
+# SPA fallback to support nested routes like /vicente or /navidad
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
