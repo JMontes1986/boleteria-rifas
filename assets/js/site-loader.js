@@ -195,12 +195,14 @@
         const index = await fetchJson(INDEX_PATH);
         const { match, fallback, normalizedPath } = findSiteEntry(window.location.pathname, index.sites);
 
-        if (!match && !fallback) {
+        const target = match || fallback;
+
+        if (!target) {
             return { notFound: true, requestedBasePath: normalizedPath, index };
         }
 
         const config = await fetchJson(target.config);
-        return { entry: target, config, index, requestedBasePath };
+        return { entry: target, config, index, requestedBasePath: normalizedPath };
     }
 
     window.SiteLoader = {
