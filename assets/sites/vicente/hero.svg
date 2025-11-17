@@ -1,0 +1,15 @@
+<svg width="1200" height="500" viewBox="0 0 1200 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Campaña solidaria Vicente">
+  <defs>
+    <linearGradient id="gradient-vicente" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#f97316"/>
+      <stop offset="100%" stop-color="#fbbf24"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="500" fill="#0f172a" rx="40"/>
+  <rect x="30" y="30" width="1140" height="440" fill="url(#gradient-vicente)" rx="36" opacity="0.9"/>
+  <text x="80" y="160" font-family="'Inter', sans-serif" font-size="60" fill="#0f172a" font-weight="800">Rifa solidaria por Vicente</text>
+  <text x="80" y="225" font-family="'Inter', sans-serif" font-size="28" fill="#0f172a" opacity="0.8">Apoyo directo a terapias y acompañamiento familiar</text>
+  <circle cx="1000" cy="180" r="120" fill="#0f172a" opacity="0.16"/>
+  <circle cx="1040" cy="320" r="90" fill="#0f172a" opacity="0.22"/>
+  <path d="M200 350 Q380 300 560 350 T920 360" fill="none" stroke="#0f172a" stroke-width="6" stroke-linecap="round" opacity="0.35"/>
+</svg>
