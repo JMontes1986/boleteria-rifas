@@ -325,3 +325,210 @@ footer {
 .icon {
   font-size: 1.2rem;
 }
+
+/* === Hub administrativo === */
+.admin-hub-body {
+  background: var(--background-gradient);
+  color: var(--text-main);
+}
+
+.admin-hub {
+  max-width: 1180px;
+  margin: 28px auto 80px;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.admin-hub-hero {
+  box-shadow: var(--shadow);
+  border: 1px solid var(--panel-border);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(56, 189, 248, 0.08)), var(--card);
+}
+
+.admin-hub-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-hub-section {
+  border: 1px solid var(--panel-border);
+}
+
+.section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  margin: 6px 0 4px;
+}
+
+.section-subtitle {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.section-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.admin-hub-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--card) 88%, var(--bg));
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.admin-hub-card .card-title {
+  margin: 0;
+}
+
+.admin-hub-card .card-subtitle {
+  margin-top: 4px;
+}
+
+.admin-hub-detail {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-hub-detail .metadata-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.admin-hub-detail .metadata-grid div {
+  padding: 12px;
+  border: 1px dashed var(--panel-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+}
+
+.admin-hub-detail .metadata-grid span {
+  display: block;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.admin-hub-detail .metadata-grid strong {
+  font-size: 15px;
+}
+
+.admin-hub-form .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-hub-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-hub-form input,
+.admin-hub-form textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--card) 92%, var(--bg));
+  color: var(--text-main);
+}
+
+.admin-hub-form small {
+  color: var(--text-muted);
+}
+
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.admin-hub-preview {
+  margin-top: 16px;
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--card) 90%, var(--bg));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-block {
+  background: rgba(15, 23, 42, 0.78);
+  color: #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--panel-border);
+  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.admin-hub-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-main);
+}
+
+.admin-hub-list li {
+  line-height: 1.6;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 18px 0;
+}
+
+.badge-success {
+  background: color-mix(in srgb, var(--success) 25%, transparent);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 45%, transparent);
+}
+
+@media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+  }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-hub-preview {
+    padding: 12px;
+  }
+}
