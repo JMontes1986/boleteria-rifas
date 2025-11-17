@@ -1,0 +1,26 @@
+{
+  "id": "regalos",
+  "name": "Club de Regalos",
+  "basePath": "/regalos",
+  "branding": {
+    "documentTitle": "Club de Regalos Semanales",
+    "topbarTitle": "Club de Regalos",
+    "topbarSubtitle": "Premios cada semana",
+    "heroTitle": "Participa por regalos semanales",
+    "heroSubtitle": "Dale seguimiento a los sorteos y anima a tu comunidad con premios recurrentes."
+  },
+  "colors": {
+    "background": "#0b1120",
+    "backgroundSoft": "#0f172a",
+    "card": "#101828",
+    "textMain": "#e2e8f0",
+    "textMuted": "#cbd5e1",
+    "primary": "#6366f1",
+    "primaryHover": "#4f46e5",
+    "accent": "#22d3ee",
+    "shadow": "0 24px 48px rgba(31, 41, 55, 0.45)"
+  },
+  "assets": {
+    "heroImage": "/assets/sites/regalos/hero.svg"
+  }
+}
