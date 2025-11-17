@@ -1,0 +1,28 @@
+{
+  "sites": [
+    {
+      "id": "default",
+      "name": "Boletería & Rifas",
+      "basePath": "/",
+      "config": "/assets/sites/default/config.json"
+    },
+    {
+      "id": "vicente",
+      "name": "Rifa solidaria Vicente",
+      "basePath": "/vicente",
+      "config": "/assets/sites/vicente/config.json"
+    },
+    {
+      "id": "navidad",
+      "name": "Especial Navidad",
+      "basePath": "/navidad",
+      "config": "/assets/sites/navidad/config.json"
+    },
+    {
+      "id": "regalos",
+      "name": "Club de Regalos",
+      "basePath": "/regalos",
+      "config": "/assets/sites/regalos/config.json"
+    }
+  ]
+}
