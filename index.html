@@ -218,8 +218,121 @@
         }
 
         .hero-card {
-            background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 22%, transparent), color-mix(in srgb, var(--accent) 18%, transparent));
+            background: linear-gradient(145deg, color-mix(in srgb, var(--primary) 22%, transparent), color-mix(in srgb, var(--accent) 18%, transparent));
             border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-card::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 20% 20%, color-mix(in srgb, var(--accent) 28%, transparent), transparent 45%),
+            radial-gradient(circle at 80% 30%, color-mix(in srgb, var(--primary) 25%, transparent), transparent 40%);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .hero-grid {
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 22px;
+            align-items: center;
+            z-index: 1;
+        }
+
+        .hero-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            background: color-mix(in srgb, var(--surface-soft) 65%, transparent);
+            color: var(--text-main);
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.3px;
+            width: fit-content;
+        }
+
+        .hero-subtitle {
+            margin: 0;
+            font-size: 15px;
+            color: var(--text-main);
+            max-width: 580px;
+            line-height: 1.6;
+        }
+
+        .hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .hero-pill {
+            padding: 6px 12px;
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+            border: 1px solid color-mix(in srgb, var(--panel-border) 65%, transparent);
+            font-weight: 600;
+            color: var(--text-main);
+            font-size: 12px;
+        }
+
+        .hero-highlight {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 18px;
+            border-radius: 14px;
+            background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+            border: 1px solid color-mix(in srgb, var(--panel-border) 65%, transparent);
+            box-shadow: 0 16px 28px rgba(0, 0, 0, 0.16);
+        }
+
+        .hero-highlight-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            font-size: 16px;
+            color: var(--text-main);
+        }
+
+        .hero-highlight p {
+            margin: 0;
+            color: var(--text-main);
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .hero-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
+            padding: 0;
+            margin: 6px 0 0;
+            list-style: none;
+            color: var(--text-main);
+        }
+
+        .hero-list li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--surface-soft) 65%, transparent);
+            border: 1px solid color-mix(in srgb, var(--panel-border) 60%, transparent);
+            font-weight: 600;
         }
 
         .card-title {
@@ -428,6 +541,10 @@
             color: var(--button-text);
         }
 
+        .admin-section .btn-primary {
+            color: #fff;
+        }
+        
         .btn-primary:hover,
         button.btn-primary:hover {
             background: var(--primary-hover);
@@ -1022,8 +1139,28 @@
 
     <main class="app-shell">
         <section class="card hero-card">
-            <h1 class="card-title">Sistema de boletería moderno @JMontes.86</h1>
-            <p class="card-subtitle">Gestiona rifas, vendedores y ventas en un entorno sobrio y claro.</p>
+            <div class="hero-grid">
+                <div class="hero-copy">
+                    <span class="hero-eyebrow">🎟️ Sistema de boletería moderno</span>
+                    <h1 class="card-title">Boletería y rifas con control total</h1>
+                    <p class="hero-subtitle">Gestiona rifas, vendedores y ventas en un entorno sobrio, claro y preparado para crecer sin perder el control.</p>
+                    <div class="hero-meta">
+                        <span class="hero-pill">Panel centralizado</span>
+                        <span class="hero-pill">Alertas en tiempo real</span>
+                        <span class="hero-pill">Auditoría segura</span>
+                    </div>
+                </div>
+
+                <div class="hero-highlight" aria-label="Resumen de beneficios del sistema">
+                    <p class="hero-highlight-title">⚡ Operación rápida y organizada</p>
+                    <p>Registra ventas, asigna vendedores y consulta avances desde una sola vista. Todo queda trazable y listo para revisión.</p>
+                    <ul class="hero-list">
+                        <li>✔️ Control de cupos y reservas</li>
+                        <li>✔️ Historial de ventas consolidado</li>
+                        <li>✔️ Flujos listos para auditoría</li>
+                    </ul>
+                </div>
+            </div>
         </section>
 
         <div class="tab-container">
