@@ -21,6 +21,7 @@
     "shadow": "0 24px 48px rgba(31, 41, 55, 0.45)"
   },
   "assets": {
-    "heroImage": "/assets/sites/regalos/hero.svg"
+    "basePath": "/assets/img/regalos",
+    "heroImage": "hero.svg"
   }
 }
