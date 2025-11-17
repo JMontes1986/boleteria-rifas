@@ -1,0 +1,26 @@
+{
+  "id": "default",
+  "name": "Boletería & Rifas",
+  "basePath": "/",
+  "branding": {
+    "documentTitle": "Boletería & Rifas",
+    "topbarTitle": "Boletería & Rifas",
+    "topbarSubtitle": "Panel centralizado de rifas",
+    "heroTitle": "Sistema de boletería moderno",
+    "heroSubtitle": "Gestiona rifas, vendedores y ventas en un entorno sobrio y claro."
+  },
+  "colors": {
+    "background": "#0b1120",
+    "backgroundSoft": "#111827",
+    "card": "#0f172a",
+    "textMain": "#f9fafb",
+    "textMuted": "#9ca3af",
+    "primary": "#22c55e",
+    "primaryHover": "#16a34a",
+    "accent": "#38bdf8",
+    "shadow": "0 20px 40px rgba(15, 23, 42, 0.7)"
+  },
+  "assets": {
+    "heroImage": "/assets/sites/default/hero.svg"
+  }
+}
