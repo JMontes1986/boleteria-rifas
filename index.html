@@ -1338,11 +1338,33 @@
         </div>
     </div>
 
+    <script src="/assets/js/site-loader.js"></script>
     <script>
-        (function loadVersionedAssets() {
+        (async function loadVersionedAssets() {
             const version = document.documentElement.dataset.assetVersion || String(Date.now());
             let appScriptQueued = false;
 
+            let siteData;
+            try {
+                siteData = await window.SiteLoader.resolveSiteFromPath();
+            } catch (error) {
+                console.error('No se pudo cargar el índice de sitios', error);
+                window.SiteLoader.renderSiteNotFound({ requestedBasePath: window.location.pathname });
+                return;
+            }
+
+            if (!siteData || siteData.notFound) {
+                window.SiteLoader.renderSiteNotFound(siteData);
+                return;
+            }
+
+            window.SITE_CONFIG = siteData.config;
+            window.SITE_ENTRY = siteData.entry;
+            window.SITE_INDEX = siteData.index;
+
+            window.SiteLoader.applyColorPalette(siteData.config.colors);
+            window.SiteLoader.applyBranding(siteData.config);
+            
             function appendScript(src, onload, onerror) {
                 const script = document.createElement('script');
                 script.src = `${src}?v=${encodeURIComponent(version)}`;
@@ -1364,10 +1386,10 @@
                     return;
                 }
                 appScriptQueued = true;
-                appendScript('assets/js/app.js');
+                appendScript('/assets/js/app.js');
             }
 
-            appendScript('assets/js/vendor-loader.js', ensureAppScriptLoaded, ensureAppScriptLoaded);
+            appendScript('/assets/js/vendor-loader.js', ensureAppScriptLoaded, ensureAppScriptLoaded);
         })();
     </script>
 </body>
