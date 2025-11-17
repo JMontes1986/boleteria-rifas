@@ -21,6 +21,7 @@
     "shadow": "0 24px 48px rgba(59, 7, 0, 0.35)"
   },
   "assets": {
-    "heroImage": "/assets/sites/vicente/hero.svg"
+    "basePath": "/assets/img/vicente",
+    "heroImage": "hero.svg"
   }
 }
