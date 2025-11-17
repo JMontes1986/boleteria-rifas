@@ -1,0 +1,26 @@
+{
+  "id": "navidad",
+  "name": "Especial Navidad",
+  "basePath": "/navidad",
+  "branding": {
+    "documentTitle": "Rifa Especial de Navidad",
+    "topbarTitle": "Rifa de Navidad",
+    "topbarSubtitle": "Celebrando con premios festivos",
+    "heroTitle": "Rifa navideña con premios brillantes",
+    "heroSubtitle": "Dale magia a la temporada con boletos que reparten regalos increíbles."
+  },
+  "colors": {
+    "background": "#0f172a",
+    "backgroundSoft": "#111827",
+    "card": "#0c1220",
+    "textMain": "#f1f5f9",
+    "textMuted": "#cbd5e1",
+    "primary": "#22c55e",
+    "primaryHover": "#16a34a",
+    "accent": "#f43f5e",
+    "shadow": "0 24px 48px rgba(15, 23, 42, 0.4)"
+  },
+  "assets": {
+    "heroImage": "/assets/sites/navidad/hero.svg"
+  }
+}
