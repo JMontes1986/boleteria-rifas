@@ -9,10 +9,31 @@
         return response.json();
     }
 
-    function normalizeBasePath(pathname) {
-        const cleaned = pathname.replace(/\/+$/, '');
-        const segments = cleaned.split('/').filter(Boolean);
-        return segments.length ? `/${segments[0]}` : '/';
+    function sanitizePathname(pathname) {
+        const raw = typeof pathname === 'string' ? pathname : '/';
+        const withoutQuery = raw.split('?')[0].split('#')[0];
+        const withoutIndex = withoutQuery.replace(/\/index\.html?$/i, '');
+        const trimmed = withoutIndex.replace(/\/+$/, '');
+        return trimmed || '/';
+    }
+
+    function findSiteEntry(pathname, sites = []) {
+        const normalizedPath = sanitizePathname(pathname);
+        const entries = Array.isArray(sites) ? [...sites] : [];
+        const sorted = entries.sort((a, b) => (b.basePath || '').length - (a.basePath || '').length);
+        const match = sorted.find(site => {
+            const base = sanitizePathname(site.basePath || '/');
+
+            if (base === '/') {
+                return normalizedPath === '/' || normalizedPath === '';
+            }
+
+            return normalizedPath === base || normalizedPath.startsWith(`${base}/`);
+        });
+
+        const fallback = sorted.find(site => sanitizePathname(site.basePath || '/') === '/');
+
+        return { match, fallback, normalizedPath };
     }
 
     function applyColorPalette(colors = {}) {
@@ -172,18 +193,10 @@
 
     async function resolveSiteFromPath() {
         const index = await fetchJson(INDEX_PATH);
-        const requestedBasePath = normalizeBasePath(window.location.pathname);
-        const matched = Array.isArray(index.sites)
-            ? index.sites.find(site => site.basePath === requestedBasePath)
-            : null;
+        const { match, fallback, normalizedPath } = findSiteEntry(window.location.pathname, index.sites);
 
-        if (!matched && requestedBasePath !== '/') {
-            return { notFound: true, requestedBasePath, index };
-        }
-
-        const target = matched || (Array.isArray(index.sites) ? index.sites.find(site => site.basePath === '/') : null);
-        if (!target) {
-            return { notFound: true, requestedBasePath, index };
+        if (!match && !fallback) {
+            return { notFound: true, requestedBasePath: normalizedPath, index };
         }
 
         const config = await fetchJson(target.config);
