@@ -1,0 +1,10 @@
+<svg width="160" height="160" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="160" height="160" rx="28" fill="#0b1120"/>
+  <rect x="26" y="40" width="108" height="80" rx="18" fill="#101828" stroke="#6366f1" stroke-width="5"/>
+  <rect x="40" y="56" width="80" height="48" rx="12" fill="#6366f1" opacity="0.14"/>
+  <circle cx="122" cy="60" r="11" fill="#22d3ee"/>
+  <path d="M52 88c10 7 46 7 56 0" stroke="#6366f1" stroke-width="7" stroke-linecap="round"/>
+  <path d="M60 72h20c6 0 10 4 10 10v10H60z" fill="#6366f1"/>
+  <path d="M88 74h22c4 0 6 2 6 6v10H88z" fill="#22d3ee"/>
+  <text x="42" y="128" fill="#e2e8f0" font-family="'Inter', system-ui, sans-serif" font-size="18" font-weight="700">Club Regalos</text>
+</svg>
