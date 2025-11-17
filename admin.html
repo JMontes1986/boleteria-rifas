@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hub de sitios | Boletería & Rifas</title>
+    <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="admin-hub-body">
+    <header class="topbar">
+        <div class="topbar-left">
+            <span class="brand-mark"><span class="logo-mark">🛠️</span></span>
+            <div>
+                <div class="topbar-title">Hub administrativo</div>
+                <div class="topbar-meta">Gestiona la configuración de los sitios</div>
+            </div>
+        </div>
+        <div class="topbar-right">
+            <a class="btn" href="/">Volver al panel principal</a>
+        </div>
+    </header>
+
+    <main class="admin-hub">
+        <section class="card hero-card admin-hub-hero">
+            <div>
+                <p class="eyebrow">Administración</p>
+                <h1 class="card-title">Central de sitios</h1>
+                <p class="card-subtitle">Consulta los sitios activos, revisa sus configuraciones y genera nuevas plantillas listas para publicar.</p>
+                <div class="admin-hub-badges">
+                    <span class="badge">Lectura directa de assets</span>
+                    <span class="badge">Snippets listos para index.json</span>
+                    <span class="badge">Checklist Supabase</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="card admin-hub-section">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Sitios existentes</p>
+                    <h2 class="section-title">Catálogo detectado</h2>
+                    <p class="section-subtitle">Se enumeran las entradas presentes en <code>assets/sites/index.json</code>.</p>
+                </div>
+                <div class="section-actions">
+                    <button id="reloadSites" class="btn btn-secondary">Actualizar listado</button>
+                </div>
+            </div>
+            <div id="siteList" class="admin-hub-grid"></div>
+            <div id="siteListEmpty" class="empty-state" style="display:none;">
+                No se encontraron sitios en el índice.
+            </div>
+        </section>
+
+        <section class="card admin-hub-section" id="siteDetailsSection" style="display:none;">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Detalle del sitio</p>
+                    <h2 class="section-title" id="siteDetailsTitle">Selecciona un sitio</h2>
+                    <p class="section-subtitle">Vista rápida de los textos de marca, paleta y rutas configuradas.</p>
+                </div>
+                <div class="section-actions">
+                    <button id="copyIndexSnippet" class="btn btn-secondary" style="display:none;">Copiar entrada para index.json</button>
+                </div>
+            </div>
+            <div id="siteDetails" class="admin-hub-detail"></div>
+        </section>
+
+        <section class="card admin-hub-section">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Nuevo sitio</p>
+                    <h2 class="section-title">Generador de configuración</h2>
+                    <p class="section-subtitle">Completa los campos y descarga un <code>config.json</code> listo para colocar en <code>assets/sites/&lt;slug&gt;/</code>.</p>
+                </div>
+                <div class="section-actions">
+                    <button id="resetForm" class="btn btn-ghost">Limpiar campos</button>
+                </div>
+            </div>
+            <form id="newSiteForm" class="admin-hub-form">
+                <div class="form-grid">
+                    <label class="form-group">
+                        <span>Slug del sitio</span>
+                        <input id="siteSlug" type="text" placeholder="ej. mi-sitio" required minlength="3" maxlength="40">
+                        <small>Solo letras, números y guiones. Se usa para carpeta, basePath y <code>sitio_slug</code>.</small>
+                    </label>
+                    <label class="form-group">
+                        <span>Nombre visible</span>
+                        <input id="siteName" type="text" placeholder="Nombre del sitio" required>
+                    </label>
+                    <label class="form-group">
+                        <span>Base path público</span>
+                        <input id="siteBasePath" type="text" placeholder="/mi-sitio" required>
+                        <small>Incluye la barra inicial. Para el root usa <code>/</code>.</small>
+                    </label>
+                    <label class="form-group">
+                        <span>Título del hero</span>
+                        <input id="heroTitle" type="text" placeholder="Texto principal del hero">
+                    </label>
+                    <label class="form-group">
+                        <span>Subtítulo del hero</span>
+                        <input id="heroSubtitle" type="text" placeholder="Descripción corta">
+                    </label>
+                    <label class="form-group">
+                        <span>Título de la barra superior</span>
+                        <input id="topbarTitle" type="text" placeholder="Texto en la barra superior">
+                    </label>
+                    <label class="form-group">
+                        <span>Subtítulo de la barra superior</span>
+                        <input id="topbarSubtitle" type="text" placeholder="Texto secundario en la barra">
+                    </label>
+                    <label class="form-group">
+                        <span>Símbolo del logo</span>
+                        <input id="logoSymbol" type="text" placeholder="Emoji o carácter" maxlength="4">
+                    </label>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Generar config</button>
+                    <button type="button" id="downloadConfig" class="btn btn-secondary" disabled>Descargar config.json</button>
+                    <button type="button" id="copyConfig" class="btn btn-ghost" disabled>Copiar JSON</button>
+                    <button type="button" id="copyNewIndex" class="btn btn-ghost" disabled>Copiar entrada index.json</button>
+                </div>
+            </form>
+            <div id="newSitePreview" class="admin-hub-preview" style="display:none;">
+                <div class="preview-header">
+                    <div>
+                        <p class="eyebrow">Resultado</p>
+                        <h3 class="section-title">config.json sugerido</h3>
+                    </div>
+                    <span class="badge badge-success" id="previewBadge">Listo para descargar</span>
+                </div>
+                <pre id="configPreview" class="code-block"></pre>
+                <div class="admin-hub-grid">
+                    <div class="admin-hub-card">
+                        <p class="eyebrow">Entrada para index.json</p>
+                        <pre id="indexPreview" class="code-block"></pre>
+                    </div>
+                    <div class="admin-hub-card">
+                        <p class="eyebrow">Checklist Supabase</p>
+                        <pre id="sqlPreview" class="code-block"></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card admin-hub-section">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Notas rápidas</p>
+                    <h2 class="section-title">Checklist de publicación</h2>
+                    <p class="section-subtitle">Asegúrate de subir los assets y actualizar los datos en Supabase antes de exponer el sitio.</p>
+                </div>
+            </div>
+            <ul class="admin-hub-list">
+                <li>Guarda el archivo generado en <code>assets/sites/&lt;slug&gt;/config.json</code> junto a <code>hero.svg</code> y <code>logo.svg</code>.</li>
+                <li>Agrega la entrada al arreglo <code>sites</code> en <code>assets/sites/index.json</code> para que el loader lo detecte.</li>
+                <li>Replica la configuración de base de datos siguiendo el SQL sugerido y verificando el header <code>x-site-slug</code>.</li>
+                <li>Prueba el sitio navegando a su <code>basePath</code> y validando que las imágenes cargan y los formularios funcionan.</li>
+            </ul>
+        </section>
+    </main>
+
+    <script src="/assets/js/admin-hub.js"></script>
+</body>
+</html>
