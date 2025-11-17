@@ -7,7 +7,8 @@
     "topbarTitle": "Boletería & Rifas",
     "topbarSubtitle": "Panel centralizado de rifas",
     "heroTitle": "Sistema de boletería moderno",
-    "heroSubtitle": "Gestiona rifas, vendedores y ventas en un entorno sobrio y claro."
+    "heroSubtitle": "Gestiona rifas, vendedores y ventas en un entorno sobrio y claro.",
+    "logoSymbol": "🎟️"
   },
   "colors": {
     "background": "#0b1120",
@@ -15,13 +16,44 @@
     "card": "#0f172a",
     "textMain": "#f9fafb",
     "textMuted": "#9ca3af",
+    "border": "#1f2937",
+    "borderStrong": "#334155",
+    "panelBorder": "rgba(148, 163, 184, 0.18)",
+    "panelBorderStrong": "rgba(148, 163, 184, 0.28)",
     "primary": "#22c55e",
     "primaryHover": "#16a34a",
     "accent": "#38bdf8",
-    "shadow": "0 20px 40px rgba(15, 23, 42, 0.7)"
+    "danger": "#f87171",
+    "warning": "#fbbf24",
+    "info": "#38bdf8",
+    "success": "#22c55e",
+    "successStrong": "#16a34a",
+    "shadow": "0 20px 40px rgba(15, 23, 42, 0.7)",
+    "surfaceStrong": "rgba(15, 23, 42, 0.92)",
+    "surfaceSoft": "rgba(15, 23, 42, 0.88)",
+    "surfaceOverlay": "rgba(8, 11, 22, 0.9)",
+    "topbarBackground": "rgba(15, 23, 42, 0.92)",
+    "topbarBackgroundLight": "rgba(255, 255, 255, 0.88)",
+    "topbarBorder": "rgba(148, 163, 184, 0.14)",
+    "topbarBorderLight": "rgba(148, 163, 184, 0.25)",
+    "footerText": "#94a3b8",
+    "buttonText": "#0f172a",
+    "ticketAvailable": "rgba(34, 197, 94, 0.18)",
+    "ticketAvailableStrong": "rgba(34, 197, 94, 0.35)",
+    "ticketReserved": "rgba(251, 191, 36, 0.18)",
+    "ticketReservedStrong": "rgba(251, 191, 36, 0.35)",
+    "ticketSold": "rgba(248, 113, 113, 0.22)",
+    "ticketSoldStrong": "rgba(248, 113, 113, 0.45)",
+    "ticketHoverShadow": "0 10px 18px rgba(2, 6, 23, 0.65)",
+    "backgroundGradient": "radial-gradient(circle at top, #111827 0, #0b1120 40%, #020617 100%)"
+  },
+  "typography": {
+    "fontFamily": "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    "headingFont": "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
   },
   "assets": {
-    "basePath": "/assets/img/default",
-    "heroImage": "hero.svg"
+    "basePath": "/assets/sites/default",
+    "heroImage": "hero.svg",
+    "logo": "logo.svg"
   }
 }
