@@ -1,0 +1,14 @@
+<svg width="1200" height="500" viewBox="0 0 1200 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fondo Boletería y Rifas">
+  <defs>
+    <linearGradient id="gradient-default" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0ea5e9" stop-opacity="0.9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="500" fill="url(#gradient-default)" rx="40"/>
+  <text x="60" y="140" font-family="'Inter', sans-serif" font-size="64" fill="#e2f3f5" font-weight="700">Boletería &amp; Rifas</text>
+  <text x="60" y="210" font-family="'Inter', sans-serif" font-size="28" fill="#e2f3f5" opacity="0.9">Panel centralizado para rifas y eventos</text>
+  <circle cx="980" cy="140" r="110" fill="#0b1120" opacity="0.24"/>
+  <circle cx="1030" cy="300" r="80" fill="#0b1120" opacity="0.18"/>
+  <path d="M250 360 Q420 310 600 360 T950 360" fill="none" stroke="#f8fafc" stroke-width="6" stroke-linecap="round" opacity="0.3"/>
+</svg>
