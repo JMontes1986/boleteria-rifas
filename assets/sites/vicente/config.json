@@ -1,0 +1,26 @@
+{
+  "id": "vicente",
+  "name": "Rifa solidaria Vicente",
+  "basePath": "/vicente",
+  "branding": {
+    "documentTitle": "Rifa solidaria por Vicente",
+    "topbarTitle": "Rifa por Vicente",
+    "topbarSubtitle": "Cada boleto apoya sus terapias",
+    "heroTitle": "Únete a la rifa solidaria de Vicente",
+    "heroSubtitle": "Recaudamos fondos para cubrir tratamientos y acompañamiento familiar."
+  },
+  "colors": {
+    "background": "#1e293b",
+    "backgroundSoft": "#0f172a",
+    "card": "#111827",
+    "textMain": "#f8fafc",
+    "textMuted": "#cbd5e1",
+    "primary": "#f97316",
+    "primaryHover": "#ea580c",
+    "accent": "#fbbf24",
+    "shadow": "0 24px 48px rgba(59, 7, 0, 0.35)"
+  },
+  "assets": {
+    "heroImage": "/assets/sites/vicente/hero.svg"
+  }
+}
