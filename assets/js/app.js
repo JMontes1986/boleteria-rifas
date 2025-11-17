@@ -22,6 +22,16 @@ let securityState = {
     blockedAttempts: 0
 };
 
+function getActiveSiteSlug() {
+    const slugSource = (window.SITE_CONFIG && window.SITE_CONFIG.id) ||
+        (window.SITE_ENTRY && window.SITE_ENTRY.id) ||
+        'default';
+
+    return String(slugSource).trim().toLowerCase() || 'default';
+}
+
+const ACTIVE_SITE_SLUG = getActiveSiteSlug();
+
 // Variables globales
 let supabaseClient;
 let tickets = {};
@@ -306,12 +316,13 @@ async function updateSystemConfig() {
                     .from('configuracion_sistema')
                     .upsert({
                         id: 1,
+                        sitio_slug: ACTIVE_SITE_SLUG,
                         total_boletas: newTotalTickets,
                         precio_boleta: newTicketPrice,
                         actualizado_por: securityState.currentSession.username,
                         fecha_actualizacion: new Date().toISOString()
                     }, {
-                        onConflict: 'id'
+                        onConflict: 'id,sitio_slug'
                     })
                     .select();
 
@@ -365,6 +376,7 @@ async function loadSystemConfig(options = {}) {
                 .from('configuracion_sistema')
                 .select('*')
                 .eq('id', 1)
+                .eq('sitio_slug', ACTIVE_SITE_SLUG)
                 .single();
 
             if (data) {
@@ -407,7 +419,7 @@ async function reinitializeTicketsWithNewCount() {
             const { error: deleteError } = await supabaseClient
                 .from('boletas')
                 .delete()
-                .neq('numero', 0);
+                .eq('sitio_slug', ACTIVE_SITE_SLUG);
 
             if (deleteError) throw deleteError;
 
@@ -415,6 +427,7 @@ async function reinitializeTicketsWithNewCount() {
             const boletasArray = [];
             for (let i = 1; i <= systemConfig.totalTickets; i++) {
                 boletasArray.push({
+                    sitio_slug: ACTIVE_SITE_SLUG,
                     numero: i,
                     estado: 'disponible',
                     vendedor: null,
@@ -876,7 +889,13 @@ function initSupabase() {
             clearTimeout(supabaseInitRetryTimeout);
             supabaseInitRetryTimeout = null;
         }
-        supabaseClient = createClient(serviceUrl, anonKey);
+        supabaseClient = createClient(serviceUrl, anonKey, {
+            global: {
+                headers: {
+                    'X-Site-Slug': ACTIVE_SITE_SLUG
+                }
+            }
+        });
         supabaseLibraryPendingLogged = false;
 
         updateConnectionStatus('connected');
@@ -993,6 +1012,7 @@ async function validateCredentialsSecurely(username, password) {
             .from('administradores')
             .select('password_hash')
             .eq('username', username)
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .limit(1);
 
         if (error) {
@@ -1072,7 +1092,7 @@ async function addSeller() {
             const passwordHash = await hashPassword(password);
             const { data, error } = await supabaseClient
                 .from('vendedores')
-                .insert([{ nombre: name, username, password_hash: passwordHash }])
+                .insert([{ nombre: name, username, password_hash: passwordHash, sitio_slug: ACTIVE_SITE_SLUG }])
                 .select();
 
             if (error) throw error;
@@ -1151,7 +1171,8 @@ async function resetSellerPassword() {
         const { error } = await supabaseClient
             .from('vendedores')
             .update({ password_hash: hashedPassword })
-            .eq('id', seller.id);
+            .eq('id', seller.id)
+            .eq('sitio_slug', ACTIVE_SITE_SLUG);
 
         if (error) throw error;
 
@@ -1222,6 +1243,7 @@ async function releaseVendorReservations(vendorName, { silent = false } = {}) {
             })
             .eq('estado', 'reservada')
             .eq('vendedor', vendorName)
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .select('numero');
 
         if (error) throw error;
@@ -1260,6 +1282,7 @@ async function releaseReservation(ticketNumber, { silent = false } = {}) {
             .eq('numero', ticketNumber)
             .eq('estado', 'reservada')
             .eq('vendedor', currentSellerData.nombre)
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .select();
 
         if (error) throw error;
@@ -1318,6 +1341,7 @@ async function loginVendor() {
             .from('vendedores')
             .select('id, nombre, username, password_hash')
             .eq('username', username)
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .limit(1);
 
         if (error) throw error;
@@ -1422,6 +1446,7 @@ async function loadSellers() {
         const { data, error } = await supabaseClient
             .from('vendedores')
             .select('id, nombre, username')
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .order('nombre');
 
         if (error) throw error;
@@ -1447,6 +1472,7 @@ async function loadTickets() {
         const { data, error } = await supabaseClient
             .from('boletas')
             .select('*')
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .order('numero');
 
         if (error) throw error;
@@ -1479,7 +1505,12 @@ function setupRealtimeSubscriptions() {
 
     const ticketsChannel = supabaseClient
         .channel('realtime-boletas')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'boletas' }, payload => {
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'boletas',
+            filter: `sitio_slug=eq.${ACTIVE_SITE_SLUG}`
+        }, payload => {
             const data = payload.new || payload.old;
             if (!data) return;
 
@@ -1517,7 +1548,12 @@ function setupRealtimeSubscriptions() {
 
     const sellersChannel = supabaseClient
         .channel('realtime-vendedores')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'vendedores' }, () => {
+        .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'vendedores',
+            filter: `sitio_slug=eq.${ACTIVE_SITE_SLUG}`
+        }, () => {
             loadSellers();
         })
         .subscribe();
@@ -1530,7 +1566,8 @@ async function initializeTicketsIfNeeded() {
     try {
         const { count, error } = await supabaseClient
             .from('boletas')
-            .select('*', { count: 'exact', head: true });
+            .select('*', { count: 'exact', head: true })
+            .eq('sitio_slug', ACTIVE_SITE_SLUG);
 
         if (error) throw error;
 
@@ -1540,6 +1577,7 @@ async function initializeTicketsIfNeeded() {
             const boletasArray = [];
             for (let i = 1; i <= systemConfig.totalTickets; i++) {
                 boletasArray.push({
+                    sitio_slug: ACTIVE_SITE_SLUG,
                     numero: i,
                     estado: 'disponible',
                     vendedor: null,
@@ -1626,6 +1664,7 @@ async function toggleTicketState(ticketNumber, options = {}) {
                 .eq('numero', ticketNumber)
                 .eq('estado', 'vendida')
                 .eq('vendedor', sellerName)
+                .eq('sitio_slug', ACTIVE_SITE_SLUG)
                 .select();
 
             if (releaseError) throw releaseError;
@@ -1665,6 +1704,7 @@ async function toggleTicketState(ticketNumber, options = {}) {
                 })
                 .eq('numero', ticketNumber)
                 .eq('estado', 'disponible')
+                .eq('sitio_slug', ACTIVE_SITE_SLUG)
                 .select();
 
             if (reserveError) throw reserveError;
@@ -1753,6 +1793,7 @@ async function toggleTicketState(ticketNumber, options = {}) {
             .eq('numero', ticketNumber)
             .eq('estado', 'reservada')
             .eq('vendedor', sellerName)
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .select();
 
         if (saleError) {
@@ -1839,7 +1880,8 @@ async function verifyDatabaseState() {
 
         const { data: boletasData, error: boletasError, count: totalBoletas } = await supabaseClient
             .from('boletas')
-            .select('*', { count: 'exact' });
+            .select('*', { count: 'exact' })
+            .eq('sitio_slug', ACTIVE_SITE_SLUG);
 
         if (boletasError) throw boletasError;
 
@@ -1849,7 +1891,8 @@ async function verifyDatabaseState() {
 
         const { data: vendedoresData, error: vendedoresError, count: totalVendedores } = await supabaseClient
             .from('vendedores')
-            .select('*', { count: 'exact' });
+            .select('*', { count: 'exact' })
+            .eq('sitio_slug', ACTIVE_SITE_SLUG);
 
         if (vendedoresError) throw vendedoresError;
 
@@ -1903,6 +1946,7 @@ async function testConnection() {
         const { data, error } = await supabaseClient
             .from('vendedores')
             .select('count', { count: 'exact', head: true })
+            .eq('sitio_slug', ACTIVE_SITE_SLUG)
             .limit(1);
 
         if (error) throw error;
@@ -2308,14 +2352,14 @@ async function resetSystem() {
                 const { error: boletasError } = await supabaseClient
                     .from('boletas')
                     .delete()
-                    .neq('numero', 0);
+                    .eq('sitio_slug', ACTIVE_SITE_SLUG);
 
                 if (boletasError) throw boletasError;
 
                 const { error: vendedoresError } = await supabaseClient
                     .from('vendedores')
                     .delete()
-                    .neq('id', 0);
+                    .eq('sitio_slug', ACTIVE_SITE_SLUG);
 
                 if (vendedoresError) throw vendedoresError;
 
