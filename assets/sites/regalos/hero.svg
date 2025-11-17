@@ -1,0 +1,15 @@
+<svg width="1200" height="500" viewBox="0 0 1200 500" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Club de regalos semanales">
+  <defs>
+    <linearGradient id="gradient-regalos" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="500" fill="#0b1120" rx="40"/>
+  <rect x="40" y="40" width="1120" height="420" fill="url(#gradient-regalos)" rx="32" opacity="0.92"/>
+  <text x="90" y="160" font-family="'Inter', sans-serif" font-size="60" fill="#e0f2fe" font-weight="800">Club de Regalos</text>
+  <text x="90" y="225" font-family="'Inter', sans-serif" font-size="28" fill="#e0f2fe" opacity="0.9">Premios recurrentes para tu comunidad</text>
+  <circle cx="980" cy="160" r="110" fill="#0b1120" opacity="0.2"/>
+  <circle cx="1040" cy="320" r="85" fill="#0b1120" opacity="0.24"/>
+  <path d="M220 340 Q400 300 580 340 T940 350" fill="none" stroke="#e0f2fe" stroke-width="5" stroke-linecap="round" opacity="0.35"/>
+</svg>
