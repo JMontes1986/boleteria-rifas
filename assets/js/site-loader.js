@@ -49,7 +49,13 @@
             if (!value) return null;
             if (/^https?:\/\//.test(value)) return value;
             if (value.startsWith('/')) return value;
-            return `/${value.replace(/^\/+/, '')}`;
+
+            const basePath = (assets.basePath || '').replace(/\/+$/, '');
+            const normalizedValue = value.replace(/^\/+/, '');
+            if (basePath) {
+                return `${basePath}/${normalizedValue}`;
+            }
+            return `/${normalizedValue}`;
         };
 
         if (branding.documentTitle) {
