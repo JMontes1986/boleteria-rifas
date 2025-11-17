@@ -37,7 +37,7 @@
     }
 
     function applyColorPalette(colors = {}) {
-        const root = document.documentElement;
+        const paletteStyleId = 'site-color-palette';
         const colorMap = {
             '--bg': colors.background,
             '--bg-soft': colors.backgroundSoft,
@@ -56,16 +56,7 @@
             '--info': colors.info,
             '--success': colors.success,
             '--success-strong': colors.successStrong || colors.success,
-            '--shadow': colors.shadow
-        };
-
-        Object.entries(colorMap).forEach(([variable, value]) => {
-            if (value) {
-                root.style.setProperty(variable, value);
-            }
-        });
-
-        const moreTokens = {
+            ''--shadow': colors.shadow,
             '--surface-strong': colors.surfaceStrong,
             '--surface-soft': colors.surfaceSoft,
             '--surface-overlay': colors.surfaceOverlay,
@@ -85,11 +76,24 @@
             '--background-gradient': colors.backgroundGradient
         };
 
-        Object.entries(moreTokens).forEach(([variable, value]) => {
-            if (value) {
-                root.style.setProperty(variable, value);
-            }
-        });
+        const declarations = Object.entries(colorMap)
+            .filter(([, value]) => Boolean(value))
+            .map(([variable, value]) => `    ${variable}: ${value};`)
+            .join('\n');
+
+        let paletteStyle = document.getElementById(paletteStyleId);
+        if (!paletteStyle) {
+            paletteStyle = document.createElement('style');
+            paletteStyle.id = paletteStyleId;
+            document.head.appendChild(paletteStyle);
+        }
+
+        if (!declarations) {
+            paletteStyle.textContent = '';
+            return;
+        }
+
+        paletteStyle.textContent = `:root[data-theme="dark"], :root:not([data-theme="light"]) {\n${declarations}\n}`;
     }
 
     function applyBranding(config = {}) {
