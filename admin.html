@@ -22,14 +22,68 @@
 
     <main class="admin-hub">
         <section class="card hero-card admin-hub-hero">
-            <div>
-                <p class="eyebrow">Administración</p>
-                <h1 class="card-title">Central de sitios</h1>
-                <p class="card-subtitle">Consulta los sitios activos, revisa sus configuraciones y genera nuevas plantillas listas para publicar.</p>
-                <div class="admin-hub-badges">
-                    <span class="badge">Lectura directa de assets</span>
-                    <span class="badge">Snippets listos para index.json</span>
-                    <span class="badge">Checklist Supabase</span>
+            <div class="hero-grid">
+                <div>
+                    <p class="eyebrow">Administración</p>
+                    <h1 class="card-title">Central de sitios</h1>
+                    <p class="card-subtitle">Consulta los sitios activos, revisa sus configuraciones y genera nuevas plantillas listas para publicar.</p>
+                    <div class="admin-hub-badges">
+                        <span class="badge">Lectura directa de assets</span>
+                        <span class="badge">Snippets listos para index.json</span>
+                        <span class="badge">Checklist Supabase</span>
+                        <span class="badge">Control total de accesos</span>
+                    </div>
+                </div>
+                <div class="hero-actions">
+                    <div class="mini-card">
+                        <p class="eyebrow">Flujo rápido</p>
+                        <h3 class="card-title">Crear y publicar</h3>
+                        <p class="card-subtitle">Genera el config, añade al índice y asigna administradores en un mismo lugar.</p>
+                        <div class="pill-row">
+                            <span class="pill">Nuevo sitio</span>
+                            <span class="pill">Index.json</span>
+                            <span class="pill">Roles</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card admin-hub-section">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Atajos</p>
+                    <h2 class="section-title">Panel de control rápido</h2>
+                    <p class="section-subtitle">Cards agrupadas para crear sitios, revisar el índice y administrar accesos sin perder contexto.</p>
+                </div>
+            </div>
+            <div class="quick-actions-grid">
+                <div class="mini-card">
+                    <p class="eyebrow">Catálogo</p>
+                    <h3 class="card-title">Sitios detectados</h3>
+                    <p class="card-subtitle">Revisa los sitios listados y ejecuta acciones rápidas.</p>
+                    <div class="form-actions">
+                        <button id="reloadSites" class="btn btn-secondary">Actualizar listado</button>
+                        <a class="btn btn-ghost" href="#siteDetailsSection">Ver detalles</a>
+                    </div>
+                </div>
+                <div class="mini-card">
+                    <p class="eyebrow">Plantillas</p>
+                    <h3 class="card-title">Nuevo sitio</h3>
+                    <p class="card-subtitle">Completa los campos y descarga un <code>config.json</code> listo.</p>
+                    <div class="form-actions">
+                        <a class="btn btn-primary" href="#newSiteForm">Generar config</a>
+                        <button id="copyNewIndexShortcut" type="button" class="btn btn-secondary" disabled>Copiar entrada index.json</button>
+                    </div>
+                </div>
+                <div class="mini-card">
+                    <p class="eyebrow">Accesos</p>
+                    <h3 class="card-title">Administradores & usuarios</h3>
+                    <p class="card-subtitle">Mantén control de roles y cuentas para cada sitio.</p>
+                    <div class="form-actions">
+                        <a class="btn btn-primary" href="#accessSection">Ir al gestor</a>
+                        <button id="copyAccessResume" type="button" class="btn btn-ghost" disabled>Copiar resumen</button>
+                    </div>
                 </div>
             </div>
         </section>
@@ -42,7 +96,7 @@
                     <p class="section-subtitle">Se enumeran las entradas presentes en <code>assets/sites/index.json</code>. Ahora puedes revisar acciones rápidas o depurar el índice.</p>
                 </div>
                 <div class="section-actions">
-                    <button id="reloadSites" class="btn btn-secondary">Actualizar listado</button>
+                    <button id="reloadSitesSecondary" class="btn btn-secondary">Actualizar listado</button>
                 </div>
             </div>
             <div id="siteList" class="admin-hub-grid"></div>
@@ -167,6 +221,87 @@
             </div>
         </section>
 
+        <section class="card admin-hub-section" id="accessSection">
+            <div class="section-header">
+                <div>
+                    <p class="eyebrow">Roles y credenciales</p>
+                    <h2 class="section-title">Gestor de administradores y usuarios</h2>
+                    <p class="section-subtitle">Centraliza la asignación de administradores y usuarios por sitio. La información se mantiene local para preparar el alta en Supabase.</p>
+                </div>
+                <div class="section-actions">
+                    <label class="form-group compact">
+                        <span>Sitio activo</span>
+                        <select id="accessSiteSelector"></select>
+                    </label>
+                    <button id="clearAccess" class="btn btn-ghost" type="button">Limpiar listas</button>
+                </div>
+            </div>
+            <div class="access-grid">
+                <div class="access-card">
+                    <div class="access-card-header">
+                        <div>
+                            <p class="eyebrow">Administradores</p>
+                            <h3 class="card-title">Control de cuentas</h3>
+                            <p class="card-subtitle">Registra usuarios de mantenimiento y su contacto.</p>
+                        </div>
+                        <span class="badge" id="adminBadge">0 asignados</span>
+                    </div>
+                    <form id="adminForm" class="admin-hub-form mini">
+                        <div class="form-grid">
+                            <label class="form-group">
+                                <span>Usuario</span>
+                                <input id="adminUsername" type="text" placeholder="admin_sitio" required>
+                            </label>
+                            <label class="form-group">
+                                <span>Rol</span>
+                                <input id="adminRole" type="text" placeholder="Superadmin, soporte" required>
+                            </label>
+                            <label class="form-group">
+                                <span>Contacto</span>
+                                <input id="adminContact" type="text" placeholder="correo o teléfono">
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" type="submit">Agregar administrador</button>
+                            <button class="btn btn-secondary" type="button" id="copyAdmins">Copiar lista</button>
+                        </div>
+                    </form>
+                    <div id="adminList" class="access-list"></div>
+                </div>
+                <div class="access-card">
+                    <div class="access-card-header">
+                        <div>
+                            <p class="eyebrow">Usuarios</p>
+                            <h3 class="card-title">Operadores y vendedores</h3>
+                            <p class="card-subtitle">Administra cuentas de uso diario vinculadas al sitio.</p>
+                        </div>
+                        <span class="badge" id="userBadge">0 registrados</span>
+                    </div>
+                    <form id="userForm" class="admin-hub-form mini">
+                        <div class="form-grid">
+                            <label class="form-group">
+                                <span>Usuario</span>
+                                <input id="userUsername" type="text" placeholder="vendedor_sitio" required>
+                            </label>
+                            <label class="form-group">
+                                <span>Nombre</span>
+                                <input id="userName" type="text" placeholder="Nombre completo" required>
+                            </label>
+                            <label class="form-group">
+                                <span>Rol interno</span>
+                                <input id="userRole" type="text" placeholder="Vendedor, soporte, lector">
+                            </label>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" type="submit">Agregar usuario</button>
+                            <button class="btn btn-secondary" type="button" id="copyUsers">Copiar lista</button>
+                        </div>
+                    </form>
+                    <div id="userList" class="access-list"></div>
+                </div>
+            </div>
+        </section>
+
         <section class="card admin-hub-section">
             <div class="section-header">
                 <div>
@@ -180,6 +315,7 @@
                 <li>Agrega la entrada al arreglo <code>sites</code> en <code>assets/sites/index.json</code> para que el loader lo detecte.</li>
                 <li>Replica la configuración de base de datos siguiendo el SQL sugerido y verificando el header <code>x-site-slug</code>.</li>
                 <li>Prueba el sitio navegando a su <code>basePath</code> y validando que las imágenes cargan y los formularios funcionan.</li>
+                <li>Comparte la lista de administradores y usuarios generada para actualizarlos en Supabase.</li>
             </ul>
         </section>
     </main>
