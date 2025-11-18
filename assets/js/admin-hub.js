@@ -7,6 +7,7 @@
     const siteDetailsTitle = document.getElementById('siteDetailsTitle');
     const copyIndexSnippetBtn = document.getElementById('copyIndexSnippet');
     const siteActions = document.getElementById('siteActions');
+    const reloadSitesSecondary = document.getElementById('reloadSitesSecondary');
 
     const indexChangesSection = document.getElementById('indexChangesSection');
     const indexFullPreview = document.getElementById('indexFullPreview');
@@ -18,6 +19,7 @@
     const downloadConfigBtn = document.getElementById('downloadConfig');
     const copyConfigBtn = document.getElementById('copyConfig');
     const copyNewIndexBtn = document.getElementById('copyNewIndex');
+    const copyNewIndexShortcutBtn = document.getElementById('copyNewIndexShortcut');
     const resetFormBtn = document.getElementById('resetForm');
 
     const configPreview = document.getElementById('configPreview');
@@ -26,6 +28,24 @@
     const newSitePreview = document.getElementById('newSitePreview');
     const previewBadge = document.getElementById('previewBadge');
 
+    const accessSiteSelector = document.getElementById('accessSiteSelector');
+    const clearAccessBtn = document.getElementById('clearAccess');
+    const adminForm = document.getElementById('adminForm');
+    const adminUsernameInput = document.getElementById('adminUsername');
+    const adminRoleInput = document.getElementById('adminRole');
+    const adminContactInput = document.getElementById('adminContact');
+    const adminList = document.getElementById('adminList');
+    const adminBadge = document.getElementById('adminBadge');
+    const copyAdminsBtn = document.getElementById('copyAdmins');
+    const userForm = document.getElementById('userForm');
+    const userUsernameInput = document.getElementById('userUsername');
+    const userNameInput = document.getElementById('userName');
+    const userRoleInput = document.getElementById('userRole');
+    const userList = document.getElementById('userList');
+    const userBadge = document.getElementById('userBadge');
+    const copyUsersBtn = document.getElementById('copyUsers');
+    const copyAccessResumeBtn = document.getElementById('copyAccessResume');
+    
     const defaultColors = {
         background: '#0b1120',
         backgroundSoft: '#111827',
@@ -74,7 +94,9 @@
         selectedSite: null,
         generatedConfig: null,
         generatedIndexSnippet: null,
-        indexChanged: false
+        indexChanged: false,
+        adminsBySite: {},
+        usersBySite: {}
     };
 
     function safeSlug(value) {
@@ -92,6 +114,64 @@
         return trimmed.replace(/\/$/, '') || '/';
     }
 
+    function ensureAccessSite(siteId) {
+        if (!siteId) return;
+        if (!state.adminsBySite[siteId]) {
+            state.adminsBySite[siteId] = [];
+        }
+        if (!state.usersBySite[siteId]) {
+            state.usersBySite[siteId] = [];
+        }
+    }
+
+    function getActiveAccessSite() {
+        const selectorValue = accessSiteSelector?.value;
+        if (selectorValue) return selectorValue;
+        return state.sites?.[0]?.id || '';
+    }
+
+    function populateAccessSelector() {
+        if (!accessSiteSelector) return;
+        const previous = accessSiteSelector.value;
+        accessSiteSelector.innerHTML = '';
+
+        if (!state.sites || state.sites.length === 0) {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'Sin sitios cargados';
+            accessSiteSelector.appendChild(option);
+            renderAccessLists('');
+            return;
+        }
+
+        state.sites.forEach((site, index) => {
+            const option = document.createElement('option');
+            option.value = site.id;
+            option.textContent = `${site.name} (${site.id})`;
+            if (previous ? site.id === previous : index === 0) {
+                option.selected = true;
+            }
+            accessSiteSelector.appendChild(option);
+            ensureAccessSite(site.id);
+        });
+
+        renderAccessLists(getActiveAccessSite());
+    }
+
+    function ensureAccessOption(siteId, siteName) {
+        if (!accessSiteSelector || !siteId) return;
+        const exists = Array.from(accessSiteSelector.options || []).some((opt) => opt.value === siteId);
+        if (exists) return;
+        const option = document.createElement('option');
+        option.value = siteId;
+        option.textContent = `${siteName || siteId} (${siteId})`;
+        accessSiteSelector.appendChild(option);
+        if (!accessSiteSelector.value) {
+            accessSiteSelector.value = siteId;
+        }
+        ensureAccessSite(siteId);
+    }
+    
     function setEmptyState(isEmpty) {
         siteListEmpty.style.display = isEmpty ? 'block' : 'none';
         siteList.style.display = isEmpty ? 'none' : 'grid';
@@ -108,6 +188,75 @@
         return div;
     }
 
+    function renderAccessList(container, items, emptyMessage, type, siteId) {
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (!items || items.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-state';
+            empty.textContent = emptyMessage;
+            container.appendChild(empty);
+            return;
+        }
+
+        items.forEach((item, index) => {
+            const row = document.createElement('div');
+            row.className = 'access-row';
+
+            const main = document.createElement('div');
+            main.className = 'access-row-main';
+            const title = document.createElement('strong');
+            title.textContent = item.username;
+            const meta = document.createElement('p');
+            meta.textContent = item.role || item.name || '';
+            const extra = document.createElement('small');
+            extra.textContent = item.contact || item.name || '';
+            main.appendChild(title);
+            if (meta.textContent) main.appendChild(meta);
+            if (extra.textContent && extra.textContent !== meta.textContent) {
+                main.appendChild(extra);
+            }
+
+            const actions = document.createElement('div');
+            actions.className = 'access-row-actions';
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'btn btn-ghost';
+            removeBtn.textContent = 'Eliminar';
+            removeBtn.addEventListener('click', () => removeAccessEntry(type, index, siteId));
+            actions.appendChild(removeBtn);
+
+            row.appendChild(main);
+            row.appendChild(actions);
+            container.appendChild(row);
+        });
+    }
+
+    function refreshAccessBadges(siteId) {
+        const admins = state.adminsBySite[siteId] || [];
+        const users = state.usersBySite[siteId] || [];
+        if (adminBadge) {
+            adminBadge.textContent = `${admins.length} asignados`;
+        }
+        if (userBadge) {
+            userBadge.textContent = `${users.length} registrados`;
+        }
+    }
+
+    function renderAccessLists(siteId) {
+        ensureAccessSite(siteId);
+        const admins = state.adminsBySite[siteId] || [];
+        const users = state.usersBySite[siteId] || [];
+
+        renderAccessList(adminList, admins, 'Sin administradores definidos', 'admin', siteId);
+        renderAccessList(userList, users, 'Sin usuarios registrados', 'user', siteId);
+        refreshAccessBadges(siteId);
+
+        if (copyAccessResumeBtn) {
+            copyAccessResumeBtn.disabled = !siteId || (admins.length === 0 && users.length === 0);
+        }
+    }
+    
     function showSiteDetails(site, config) {
         siteDetailsSection.style.display = 'block';
         siteDetailsTitle.textContent = `${site.name} (${site.id})`;
@@ -163,6 +312,76 @@
         renderSiteActions(site, config);
     }
 
+    function removeAccessEntry(type, index, siteId) {
+        if (!siteId) return;
+        if (type === 'admin') {
+            state.adminsBySite[siteId]?.splice(index, 1);
+        } else {
+            state.usersBySite[siteId]?.splice(index, 1);
+        }
+        renderAccessLists(siteId);
+    }
+
+    function addAccessEntry(type, payload) {
+        const siteId = getActiveAccessSite();
+        if (!siteId) {
+            alert('Selecciona un sitio para guardar las credenciales.');
+            return;
+        }
+        ensureAccessSite(siteId);
+        const target = type === 'admin' ? state.adminsBySite[siteId] : state.usersBySite[siteId];
+        target.push(payload);
+        renderAccessLists(siteId);
+    }
+
+    function copyAccessList(type) {
+        const siteId = getActiveAccessSite();
+        if (!siteId) return;
+        const list = type === 'admin' ? state.adminsBySite[siteId] : state.usersBySite[siteId];
+        if (!list || list.length === 0) return;
+        const badge = type === 'admin' ? adminBadge : userBadge;
+        const reset = type === 'admin' ? '0 asignados' : '0 registrados';
+        copyText(JSON.stringify(list, null, 2), `${type === 'admin' ? 'Admins' : 'Usuarios'} copiados`, badge, reset);
+    }
+
+    function buildAccessResume(siteId) {
+        const admins = state.adminsBySite[siteId] || [];
+        const users = state.usersBySite[siteId] || [];
+        const lines = [`Sitio: ${siteId}`, '', 'Administradores:'];
+        if (admins.length === 0) {
+            lines.push('- Ninguno');
+        } else {
+            admins.forEach((admin) => {
+                lines.push(`- ${admin.username} (${admin.role || 'sin rol'}) ${admin.contact ? '- ' + admin.contact : ''}`);
+            });
+        }
+        lines.push('', 'Usuarios:');
+        if (users.length === 0) {
+            lines.push('- Ninguno');
+        } else {
+            users.forEach((user) => {
+                lines.push(`- ${user.username} (${user.name || 'sin nombre'}) ${user.role ? '- ' + user.role : ''}`);
+            });
+        }
+        return lines.join('\n');
+    }
+
+    function handleCopyAccessResume() {
+        const siteId = getActiveAccessSite();
+        if (!siteId) return;
+        const resume = buildAccessResume(siteId);
+        const resetLabel = copyAccessResumeBtn?.textContent || 'Copiar resumen';
+        copyText(resume, 'Resumen copiado', copyAccessResumeBtn, resetLabel);
+    }
+
+    function clearAccessListsForSite() {
+        const siteId = getActiveAccessSite();
+        if (!siteId) return;
+        state.adminsBySite[siteId] = [];
+        state.usersBySite[siteId] = [];
+        renderAccessLists(siteId);
+    }
+    
     function buildSqlSnippet(slug) {
         return `-- Inserta la configuración base\ninsert into public.configuracion_sistema (sitio_slug, id, total_boletas, precio_boleta, actualizado_por, fecha_actualizacion)\nvalues ('${slug}', 1, 1000, 10000, 'admin', now())\non conflict (sitio_slug, id) do update\nset total_boletas = excluded.total_boletas,\n    precio_boleta = excluded.precio_boleta,\n    actualizado_por = excluded.actualizado_por,\n    fecha_actualizacion = excluded.fecha_actualizacion;\n\n-- Administrador inicial\ninsert into public.administradores (username, password_hash, sitio_slug)\nvalues ('admin_${slug}', '<hash-sha256>', '${slug}')\non conflict (sitio_slug, username) do update set password_hash = excluded.password_hash;\n\n-- Vendedor base (opcional)\ninsert into public.vendedores (nombre, username, password_hash, sitio_slug)\nvalues ('Vendedor demo', 'vendedor_${slug}', '<hash-sha256>', '${slug}')\non conflict (sitio_slug, username) do update set password_hash = excluded.password_hash;`;
     }
@@ -216,6 +435,11 @@
                     </div>
                     <span class="badge">${site.config}</span>
                 </div>
+                <div class="pill-row" style="margin-bottom: 10px;">
+                    <span class="pill">BasePath</span>
+                    <span class="pill">${site.basePath}</span>
+                    <span class="pill">Config local</span>
+                </div>
                 <div class="form-actions">
                     <button class="btn btn-primary" data-action="view">Ver detalles</button>
                     <a class="btn btn-secondary" href="${site.basePath}" target="_blank" rel="noreferrer">Abrir sitio</a>
@@ -246,6 +470,7 @@
             state.indexChanged = false;
             renderSites(state.sites);
             refreshIndexPreview();
+            populateAccessSelector();
         } catch (error) {
             siteListEmpty.textContent = error.message;
             setEmptyState(true);
@@ -328,6 +553,15 @@
         downloadConfigBtn.disabled = false;
         copyConfigBtn.disabled = false;
         copyNewIndexBtn.disabled = false;
+        if (copyNewIndexShortcutBtn) {
+            copyNewIndexShortcutBtn.disabled = false;
+        }
+
+        ensureAccessOption(config.id, config.name);
+        if (accessSiteSelector) {
+            accessSiteSelector.value = config.id;
+        }
+        renderAccessLists(config.id);
     }
 
     function resetForm() {
@@ -336,6 +570,9 @@
         downloadConfigBtn.disabled = true;
         copyConfigBtn.disabled = true;
         copyNewIndexBtn.disabled = true;
+        if (copyNewIndexShortcutBtn) {
+            copyNewIndexShortcutBtn.disabled = true;
+        }
         state.generatedConfig = null;
         state.generatedIndexSnippet = null;
     }
@@ -467,7 +704,11 @@
     }
 
     function setupEvents() {
+        if (copyAccessResumeBtn) {
+            copyAccessResumeBtn.disabled = true;
+        }
         document.getElementById('reloadSites')?.addEventListener('click', loadSites);
+        reloadSitesSecondary?.addEventListener('click', loadSites);
         copyIndexSnippetBtn?.addEventListener('click', () => {
             const snippet = copyIndexSnippetBtn.dataset.snippet;
             if (snippet) {
@@ -488,7 +729,12 @@
                 copyText(state.generatedIndexSnippet, 'Index');
             }
         });
-
+        copyNewIndexShortcutBtn?.addEventListener('click', () => {
+            if (state.generatedIndexSnippet) {
+                copyText(state.generatedIndexSnippet, 'Index');
+            }
+        });
+        
         copyIndexFullBtn?.addEventListener('click', () => {
             copyText(indexFullPreview.textContent, 'index.json copiado', indexChangesBadge, 'Sin cambios pendientes');
         });
@@ -496,6 +742,42 @@
         downloadIndexFullBtn?.addEventListener('click', () => {
             downloadJson(indexFullPreview.textContent, 'index.json');
         });
+
+        accessSiteSelector?.addEventListener('change', () => {
+            renderAccessLists(getActiveAccessSite());
+        });
+
+        clearAccessBtn?.addEventListener('click', clearAccessListsForSite);
+
+        adminForm?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const username = adminUsernameInput?.value.trim();
+            const role = adminRoleInput?.value.trim();
+            const contact = adminContactInput?.value.trim();
+            if (!username || !role) {
+                alert('Completa usuario y rol del administrador.');
+                return;
+            }
+            addAccessEntry('admin', { username, role, contact });
+            adminForm.reset();
+        });
+
+        userForm?.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const username = userUsernameInput?.value.trim();
+            const name = userNameInput?.value.trim();
+            const role = userRoleInput?.value.trim();
+            if (!username || !name) {
+                alert('Completa usuario y nombre del operador.');
+                return;
+            }
+            addAccessEntry('user', { username, name, role });
+            userForm.reset();
+        });
+
+        copyAdminsBtn?.addEventListener('click', () => copyAccessList('admin'));
+        copyUsersBtn?.addEventListener('click', () => copyAccessList('user'));
+        copyAccessResumeBtn?.addEventListener('click', handleCopyAccessResume);
     }
     
     setupEvents();
