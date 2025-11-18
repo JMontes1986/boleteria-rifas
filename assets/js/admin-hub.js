@@ -6,6 +6,13 @@
     const siteDetails = document.getElementById('siteDetails');
     const siteDetailsTitle = document.getElementById('siteDetailsTitle');
     const copyIndexSnippetBtn = document.getElementById('copyIndexSnippet');
+    const siteActions = document.getElementById('siteActions');
+
+    const indexChangesSection = document.getElementById('indexChangesSection');
+    const indexFullPreview = document.getElementById('indexFullPreview');
+    const indexChangesBadge = document.getElementById('indexChangesBadge');
+    const copyIndexFullBtn = document.getElementById('copyIndexFull');
+    const downloadIndexFullBtn = document.getElementById('downloadIndexFull');
 
     const newSiteForm = document.getElementById('newSiteForm');
     const downloadConfigBtn = document.getElementById('downloadConfig');
@@ -66,7 +73,8 @@
         sites: [],
         selectedSite: null,
         generatedConfig: null,
-        generatedIndexSnippet: null
+        generatedIndexSnippet: null,
+        indexChanged: false
     };
 
     function safeSlug(value) {
@@ -151,6 +159,8 @@
         siteDetails.appendChild(detailCard);
         siteDetails.appendChild(codeBlock);
         siteDetails.appendChild(sqlBlock);
+
+        renderSiteActions(site, config);
     }
 
     function buildSqlSnippet(slug) {
@@ -170,6 +180,9 @@
         siteDetailsTitle.textContent = 'Cargando configuración...';
         siteDetails.innerHTML = '<div class="empty-state">Leyendo config.json...</div>';
         copyIndexSnippetBtn.style.display = 'none';
+        if (siteActions) {
+            siteActions.style.display = 'none';
+        }
 
         try {
             const config = await fetchConfig(site.config);
@@ -206,11 +219,15 @@
                 <div class="form-actions">
                     <button class="btn btn-primary" data-action="view">Ver detalles</button>
                     <a class="btn btn-secondary" href="${site.basePath}" target="_blank" rel="noreferrer">Abrir sitio</a>
+                    <button class="btn btn-ghost" data-action="copy">Copiar slug</button>
+                    <button class="btn btn-danger" data-action="delete">Eliminar del índice</button>
                 </div>
             `;
 
             const viewBtn = card.querySelector('[data-action="view"]');
             viewBtn.addEventListener('click', () => viewSite(site));
+            card.querySelector('[data-action="copy"]').addEventListener('click', () => copyText(site.id, 'Slug copiado', indexChangesBadge, indexChangesBadge?.textContent || 'Sin cambios pendientes'));
+            card.querySelector('[data-action="delete"]').addEventListener('click', () => removeSiteFromIndex(site.id));
             siteList.appendChild(card);
         });
     }
@@ -226,7 +243,9 @@
             }
             const index = await response.json();
             state.sites = index.sites || [];
+            state.indexChanged = false;
             renderSites(state.sites);
+            refreshIndexPreview();
         } catch (error) {
             siteListEmpty.textContent = error.message;
             setEmptyState(true);
@@ -332,16 +351,118 @@
         URL.revokeObjectURL(url);
     }
 
-    async function copyText(text, label) {
+    async function copyText(text, label, badgeEl = previewBadge, resetLabel = 'Listo para descargar') {
         try {
             await navigator.clipboard.writeText(text);
-            previewBadge.textContent = `${label} copiado`;
-            setTimeout(() => {
-                previewBadge.textContent = 'Listo para descargar';
-            }, 1400);
+            if (badgeEl) {
+                badgeEl.textContent = label;
+                setTimeout(() => {
+                    badgeEl.textContent = resetLabel;
+                }, 1400);
+            }
         } catch (error) {
             alert('No se pudo copiar el contenido');
             console.error(error);
+        }
+    }
+
+    function renderSiteActions(site) {
+        if (!siteActions) return;
+        siteActions.style.display = 'grid';
+
+        siteActions.innerHTML = `
+            <div class="action-grid">
+                <div class="action-card">
+                    <p class="eyebrow">Acciones rápidas</p>
+                    <div class="pill-row">
+                        <span class="pill">${site.basePath}</span>
+                        <span class="pill">${site.config}</span>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" data-action="copy-base">Copiar basePath</button>
+                        <button class="btn btn-ghost" data-action="copy-config">Copiar ruta config</button>
+                    </div>
+                </div>
+                <div class="action-card">
+                    <p class="eyebrow">Mantenimiento</p>
+                    <p>Elimina la entrada del índice o abre el sitio para validar contenido.</p>
+                    <div class="form-actions">
+                        <a class="btn btn-secondary" href="${site.basePath}" target="_blank" rel="noreferrer">Abrir sitio</a>
+                        <button class="btn btn-danger" data-action="delete">Eliminar del índice</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        siteActions.querySelector('[data-action="copy-base"]').addEventListener('click', () => {
+            copyText(site.basePath, 'BasePath copiado', indexChangesBadge, indexChangesBadge?.textContent || 'Sin cambios pendientes');
+        });
+
+        siteActions.querySelector('[data-action="copy-config"]').addEventListener('click', () => {
+            copyText(site.config, 'Ruta copiada', indexChangesBadge, indexChangesBadge?.textContent || 'Sin cambios pendientes');
+        });
+
+        siteActions.querySelector('[data-action="delete"]').addEventListener('click', () => {
+            removeSiteFromIndex(site.id);
+        });
+    }
+
+    function markSitesAsChanged() {
+        state.indexChanged = true;
+        refreshIndexPreview(true);
+    }
+
+    function refreshIndexPreview(forceShow = false) {
+        if (!indexFullPreview) return;
+        const hasSites = state.sites && state.sites.length > 0;
+        indexChangesSection.style.display = hasSites || forceShow ? 'block' : 'none';
+        if (!hasSites) {
+            indexFullPreview.textContent = '// No hay entradas para generar index.json';
+            copyIndexFullBtn.disabled = true;
+            downloadIndexFullBtn.disabled = true;
+            if (indexChangesBadge) {
+                indexChangesBadge.textContent = 'Sin sitios en el índice';
+            }
+            return;
+        }
+
+        const content = JSON.stringify({ sites: state.sites }, null, 2);
+        indexFullPreview.textContent = content;
+        copyIndexFullBtn.disabled = false;
+        downloadIndexFullBtn.disabled = false;
+        if (indexChangesBadge) {
+            indexChangesBadge.textContent = state.indexChanged ? 'Cambios sin guardar' : 'Sin cambios pendientes';
+        }
+    }
+
+    function downloadJson(content, filename) {
+        const blob = new Blob([content], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        link.click();
+        URL.revokeObjectURL(url);
+    }
+
+    function removeSiteFromIndex(siteId) {
+        const target = state.sites.find((entry) => entry.id === siteId);
+        if (!target) return;
+        const confirmed = confirm(`¿Deseas eliminar la entrada "${target.name}" del índice local?`);
+        if (!confirmed) return;
+
+        state.sites = state.sites.filter((entry) => entry.id !== siteId);
+        renderSites(state.sites);
+        markSitesAsChanged();
+
+        if (state.selectedSite?.id === siteId) {
+            state.selectedSite = null;
+            siteDetailsTitle.textContent = 'Sitio eliminado del índice local';
+            siteDetails.innerHTML = '<div class="empty-state">Selecciona otro sitio para continuar.</div>';
+            copyIndexSnippetBtn.style.display = 'none';
+            if (siteActions) {
+                siteActions.style.display = 'none';
+            }
         }
     }
 
@@ -350,7 +471,7 @@
         copyIndexSnippetBtn?.addEventListener('click', () => {
             const snippet = copyIndexSnippetBtn.dataset.snippet;
             if (snippet) {
-                copyText(snippet, 'Entrada');
+                copyText(snippet, 'Entrada copiada', indexChangesBadge, indexChangesBadge?.textContent || 'Sin cambios pendientes');
             }
         });
 
@@ -367,8 +488,16 @@
                 copyText(state.generatedIndexSnippet, 'Index');
             }
         });
-    }
 
+        copyIndexFullBtn?.addEventListener('click', () => {
+            copyText(indexFullPreview.textContent, 'index.json copiado', indexChangesBadge, 'Sin cambios pendientes');
+        });
+
+        downloadIndexFullBtn?.addEventListener('click', () => {
+            downloadJson(indexFullPreview.textContent, 'index.json');
+        });
+    }
+    
     setupEvents();
     loadSites();
 })();
