@@ -366,11 +366,40 @@ footer {
   background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(56, 189, 248, 0.08)), var(--card);
 }
 
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: stretch;
+}
+
 .admin-hub-badges {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 12px;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.mini-card {
+  border: 1px solid var(--panel-border);
+  border-radius: 16px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--card) 94%, var(--bg));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.1);
 }
 
 .admin-hub-section {
@@ -398,6 +427,21 @@ footer {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.form-group.compact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.compact select {
+  min-width: 200px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--card) 92%, var(--bg));
+  color: var(--text-main);
 }
 
 .admin-hub-grid {
@@ -496,6 +540,63 @@ footer {
   font-size: 13px;
 }
 
+.access-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.access-card {
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--panel-border);
+  background: color-mix(in srgb, var(--card) 92%, var(--bg));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.access-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.access-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.access-row {
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+}
+
+.access-row-main strong {
+  display: block;
+}
+
+.access-row-main p {
+  margin: 4px 0;
+  color: var(--text-muted);
+}
+
+.access-row-main small {
+  color: var(--text-muted);
+}
+
+.admin-hub-form.mini .form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
 .admin-hub-form .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -592,6 +693,16 @@ footer {
     align-items: stretch;
   }
 
+  .hero-grid,
+  .quick-actions-grid,
+  .access-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-group.compact select {
+    width: 100%;
+  }
+  
   .admin-hub-preview {
     padding: 12px;
   }
